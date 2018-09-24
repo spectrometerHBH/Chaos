@@ -6,29 +6,29 @@ ACM Class CPU project
 
 ### Integer Computational Insturctions
 1. **Integer R-I Instructions**
-[] ADDI
-[] SLTI
-[] SLTIU
-[] XORI
-[] ORI
-[] ANDI
-[] SLLI
-[] SRLI
-[] SRAI
-[] LUI
-[] AUIPC
-2. **Integer R-R Instructions**
-[] ADD
-[] SUB
-[] SLL
-[] SLT
-[] SLTU
-[] XOR
-[] SRL
-[] SRA
-[] OR
-[] AND
+    [] ADDI
+    [] SLTI	(set less than imm)
+    [] SLTIU
+    [] XORI
+    [] ORI
+    [] ANDI
+    [] SLLI	(logical left shift)
+    [] SRLI	(logical right shift)
+    [] SRAI	(arthmetic right shift)
+    [] LUI	(load upper imm)
+    [] AUIPC	(add upper imm to PC)
 
+2. **Integer R-R Instructions**
+    [] ADD
+    [] SUB
+    [] SLT()
+    [] SLTU
+    [] XOR
+    [] SLL	(logical left shift)
+    [] SRL      (logical right shift)
+    [] SRA	(arthmetic right shift)
+    [] OR
+    [] AND
 3. **Nop Instructions**
 
 ### Control Transfer Instructions
@@ -60,3 +60,4 @@ ACM Class CPU project
 
 
 ## Tomasulo
+Tomasulo with ROB and speculation
