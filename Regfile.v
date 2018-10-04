@@ -11,7 +11,7 @@ module Regfile(
     input wire [`dataWidth - 1 : 0] dataw,
     input wire [`tagWidth  - 1 : 0] tagw,
 	//Write Port with Decoder
-	input wire enDecoderWrite,
+	input wire enDecoderw,
 	input wire [`regWidth - 1 : 0] regDecoderw,
 	input wire [`tagWidth - 1 : 0] tagDecoderw,
     //Read Port1
@@ -27,24 +27,24 @@ module Regfile(
     reg [`tagWidth  - 1 : 0] tag[`regCnt  - 1 : 0];
 
     integer i;
-    always @ (posedge rst) begin
-        data[0] <= 0;
-        for (i = 0; i < `regCnt; i = i + 1) begin
-            tag[i] <= `tagFree;  
-        end
-    end
-
 	always @ (posedge clk) begin
-		if (enWrite) begin
-			if (namew) begin
-				data[namew] <= dataw;
-				if (tag[namew] == tagw && (!enDecoderWrite || (enDecoderWrite && tagDecoderw != tagw))) begin
-				  tag[namew] <= `tagFree;
+		if (rst) begin
+			data[0] <= 0;
+			for (i = 0; i < `regCnt; i = i + 1) begin
+				tag[i] <= `tagFree;  
+			end
+		end else begin
+			if (enWrite) begin
+				if (namew) begin
+					data[namew] <= dataw;
+					if (tag[namew] == tagw) begin
+					tag[namew] <= `tagFree;
+					end
 				end
 			end
-		end
-		if (enDecoderWrite) begin
-		  	tag[regDecoderw] <= tagDecoderw;
+			if (enDecoderw) begin
+				tag[regDecoderw] <= tagDecoderw;
+			end
 		end
 	end
 

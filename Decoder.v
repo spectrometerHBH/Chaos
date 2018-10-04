@@ -5,18 +5,21 @@
 module Decoder(
     input wire clk,
     input wire rst,
-
     //input from IF
+    input wire decoderEnable,
     input wire [`instWidth-1 : 0] instToDecode,
     //output to ALU
-    output reg enALU,
-    output wire [`aluWidth - 1 : 0] aluData,
+    output reg aluEnable,
+    output reg [`aluWidth - 1 : 0] aluData,
     //input from ROB
     input wire tag1Ready,
     input wire tag2Ready,
+    input wire ROBtail,
     input wire [`dataWidth - 1 : 0] robData1,
     input wire [`dataWidth - 1 : 0] robData2,
     //output to ROB
+    output reg robEnable,
+    output reg [`robWidth - 1 : 0] robData,
     output wire [`tagWidth - 1 : 0] tagCheck1,
     output wire [`tagWidth - 1 : 0] tagCheck2,
     //input from Regfile
@@ -26,7 +29,10 @@ module Decoder(
     input wire [`dataWidth - 1 : 0] regData2,
     //output to Regfile
     output wire [`regWidth - 1 : 0] regAddr1,
-    output wire [`regWidth - 1 : 0] regAddr2
+    output wire [`regWidth - 1 : 0] regAddr2,
+    output reg regEnable,
+    output reg [`regWidth - 1 : 0] regTagAddr,
+    output reg [`tagWidth - 1 : 0] regTag
 );
     wire [`classOpWidth  - 1 : 0] classop;
     wire [`classOp2Width - 1 : 0] classop2;
@@ -53,6 +59,7 @@ module Decoder(
     assign data1 = (regTag1 == `tagFree) ? regData1 : robData1;
     assign tag2  = (regTag2 == `tagFree || tag2Ready) ? `tagFree : regTag2;
     assign data2 = (regTag2 == `tagFree) ? regData2 : robData2; 
+
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
                 newop = `NOP;
@@ -112,8 +119,59 @@ module Decoder(
         end
     end
 
-    //Write TO FU
-    always @ (*) begin
+    //Write TO FU, ROB and Regfile
+    always @ (negedge clk) begin
+        aluEnable <= 0;
+        robEnable <= 0;
+        regEnable <= 0;
+        case (classop)
+            `classRI : begin
+                aluEnable <= 1;
+                robEnable <= 1;
+                regEnable <= 1;
+                aluData <= {
+                    ROBtail, `tagFree, Imm, tag1, data1, newop
+                };    
+                robData <= {
+                    1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                };
+                regTagAddr <= rd;
+                regTag <= ROBtail;
+            end
+            `classRR : begin
+                aluEnable <= 1;
+                robEnable <= 1;
+                regEnable <= 1;
+                aluData <= {
+                    ROBtail, tag2, data2, tag1, data1, newop
+                };
+                robData <= {
+                    1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                };
+                regTagAddr <= rd;
+                regTag <= ROBtail;
+            end
+            `classLoad : begin
 
+            end
+            `classSave : begin
+              
+            end
+            `classBranch : begin
+              
+            end
+            `classLUI : begin
+
+            end
+            `classAUIPC : begin
+              
+            end
+            `classJAL : begin
+              
+            end
+            `classJALR : begin
+            
+            end
+            default : ;
     end
 endmodule
