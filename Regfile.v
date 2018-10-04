@@ -3,21 +3,23 @@
 `include "defines.v"
 
 module Regfile(
-    input clk,
-    input rst,
-    //Write Port
-    input enWirte,
-    input [`regWidth  - 1 : 0] namew,
-    input [`dataWidth - 1 : 0] dataw,
-    input [`]
+    input wire clk,
+    input wire rst,
+    //Write Port with ROB
+    input wire enWrite,
+    input wire [`regWidth  - 1 : 0] namew,
+    input wire [`dataWidth - 1 : 0] dataw,
+    input wire [`tagWidth  - 1 : 0] tagw,
+	//Write Port with Decoder
+	input wire enDecoderWrite,
+	input wire [`regWidth - 1 : 0] regDecoderw,
+	input wire [`tagWidth - 1 : 0] tagDecoderw,
     //Read Port1
-    input enRead1,
-    input [`regWidth - 1 : 0] name1,
+    input wire [`regWidth - 1 : 0] name1,
     output reg [`tagWidth  - 1 : 0] tag1,
     output reg [`dataWidth - 1 : 0] data1,
     //Read Port2
-    input enRead2,
-    input [`regWidth - 1 : 0] name2,
+    input wire [`regWidth - 1 : 0] name2,
     output reg [`tagWidth  - 1 : 0] tag2,
     output reg [`dataWidth - 1 : 0] data2
 );
@@ -26,22 +28,41 @@ module Regfile(
 
     integer i;
     always @ (posedge rst) begin
+        data[0] <= 0;
         for (i = 0; i < `regCnt; i = i + 1) begin
             tag[i] <= `tagFree;  
         end
     end
 
-    always @ (*) begin
-      if (enRead1) begin
-        
-      end else begin
-        
-      end
+	always @ (posedge clk) begin
+		if (enWrite) begin
+			if (namew) begin
+				data[namew] <= dataw;
+				if (tag[namew] == tagw && (!enDecoderWrite || (enDecoderWrite && tagDecoderw != tagw))) begin
+				  tag[namew] <= `tagFree;
+				end
+			end
+		end
+		if (enDecoderWrite) begin
+		  	tag[regDecoderw] <= tagDecoderw;
+		end
+	end
 
-      if (enRead2) begin
-        
-      end else begin
-        
-      end
+    always @ (*) begin
+		if (enWrite && name1 == namew) begin
+			data1 = dataw;
+			tag1  = tagw;
+		end else begin
+			data1 = data[name1];
+			tag1  = tag [name1];
+		end
+
+		if (enWrite && name2 == namew) begin
+			data2 = dataw;
+			tag2  = tagw;
+		end else begin
+			data2 = data[name2];
+			tag2  = tag [name2];
+		end
     end
 endmodule 
