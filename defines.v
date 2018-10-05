@@ -39,6 +39,7 @@
 `define robWidth        68   
 `define robOpRange      2  : 0 
 `define robAddrRange    34 : 3 
+`define robRegRange     7  : 3
 `define robDataRange    66 : 35
 `define robReadyRange   67 : 67
 

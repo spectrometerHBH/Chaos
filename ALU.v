@@ -10,10 +10,6 @@ module ALU(
     //input from Decoder
     input wire aluEnable, 
     input wire [`aluWidth   - 1 : 0] inst,  
-    //input from branchCDB
-    input wire branch_CDB_valid,
-    input wire [`tagWidth   - 1 : 0] branch_CDB_tag,
-    input wire [`dataWidth  - 1 : 0] branch_CDB_data,
     //input from LSBufCDB
     input wire LSBuf_CDB_valid,
     input wire [`tagWidth   - 1 : 0] LSBuf_CDB_tag,
@@ -63,18 +59,6 @@ module ALU(
                     end
                     if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag2Range] == ALU_CDB_tag && RS[i][`aluTag2Range] != `tagFree) begin
                         RS[i][`aluData2Range] <= ALU_CDB_data;
-                        RS[i][`aluTag2Range]  <= `tagFree;
-                    end
-                end
-            end
-            if (branch_CDB_valid) begin
-                for (i = 0; i < `RSsize; i = i + 1) begin
-                    if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == branch_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
-                        RS[i][`aluData1Range] <= branch_CDB_data;
-                        RS[i][`aluTag1Range]  <= `tagFree;  
-                    end
-                    if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag2Range] == branch_CDB_tag && RS[i][`aluTag2Range] != `tagFree) begin
-                        RS[i][`aluData2Range] <= branch_CDB_data;
                         RS[i][`aluTag2Range]  <= `tagFree;
                     end
                 end

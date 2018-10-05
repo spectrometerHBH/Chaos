@@ -17,16 +17,24 @@ module ROB(
     output reg [`dataWidth - 1 : 0] data1,
     output reg [`dataWidth - 1 : 0] data2,
     //input from ALUCDB
+    input wire ALU_ROB_valid,
     input wire [`tagWidth  - 1 : 0] ALU_CDB_tag,
     input wire [`dataWidth - 1 : 0] ALU_CDB_data,
     //input from branchCDB
+    input wire branch_ROB_valid,
     input wire [`tagWidth  - 1 : 0] branch_CDB_tag,
     input wire [`dataWidth - 1 : 0] branch_CDB_data,
     //input from LSBufCDB
+    input wire LSBuf_ROB_valid,
     input wire [`tagWidth  - 1 : 0] LSBuf_CDB_tag,
     input wire [`dataWidth - 1 : 0] LSBuf_CDB_data, 
     //output to Fetcher
-    output wire freeState
+    output wire freeState,
+    //output to Regfile
+    output reg regfileEnable,
+    output reg [`regWidth  - 1 : 0] rob_reg_name,
+    output reg [`dataWidth - 1 : 0] rob_reg_data,
+    output reg [`tagWidth  - 1 : 0] rob_reg_tag
 );
     //{Ready, Data, Addr, Op}
     reg  [`robWidth - 1 : 0] rob[`ROBsize - 1 : 0];
@@ -55,10 +63,6 @@ module ROB(
                 tag1Ready = 1;
                 data1 = ALU_CDB_data;
             end
-            branch_CDB_tag : begin
-                tag1Ready = 1;
-                data1 = branch_CDB_data;
-            end
             LSBuf_CDB_tag : begin
                 tag1Ready = 1;
                 data1 = LSBuf_CDB_data;
@@ -77,10 +81,6 @@ module ROB(
                 tag2Ready = 1;
                 data2 = ALU_CDB_data;
             end
-            branch_CDB_tag : begin
-                tag2Ready = 1;
-                data2 = branch_CDB_data;
-            end
             LSBuf_CDB_tag : begin
                 tag2Ready = 1;
                 data2 = LSBuf_CDB_data;
@@ -90,6 +90,20 @@ module ROB(
                 data2 = rob[tagCheck2][`robDataRange];
             end
         endcase
+    end
+
+    always @ (negedge clk) begin
+        if (ALU_CDB_tag) begin
+            rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
+            
+        end
+
+        if (branch_ROB_valid) begin
+        end
+
+        if (LSBuf_ROB_valid) begin
+
+        end
     end
 
     integer i;
@@ -121,6 +135,16 @@ module ROB(
     //Execute front
     always @ (*) begin
         regEnable <= 0;
-        
+        if (counter && headFinish) begin
+            case (head[`robOpRange])
+                `robClassNormal: begin
+                    regEnable <= 1;
+                    rob_reg_name <= head[`robRegRange];
+                    rob_reg_data <= head[`robDataRange];
+                    rob_reg_tag  <= frontPointer;  
+                end
+                default : ;
+            endcase  
+        end
     end
 endmodule

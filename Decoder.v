@@ -62,60 +62,72 @@ module Decoder(
 
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
-                newop = `NOP;
-        end else if (classop == `classRI) begin
-            case (classop2) 
-                3'b000 : newop = `ADD;
-                3'b010 : newop = `SLT;
-                3'b011 : newop = `SLTU;
-                3'b100 : newop = `XOR;
-                3'b110 : newop = `OR;
-                3'b111 : newop = `AND;
-                3'b001 : newop = `SLL;
-                3'b101 : newop = classop3 == 7'b0000000 ? `SRL : `SRA;
+            newop = `NOP;
+        end else begin
+            case (classop)
+                `classRI : begin
+                    case (classop2) 
+                        3'b000 : newop = `ADD;
+                        3'b010 : newop = `SLT;
+                        3'b011 : newop = `SLTU;
+                        3'b100 : newop = `XOR;
+                        3'b110 : newop = `OR;
+                        3'b111 : newop = `AND;
+                        3'b001 : newop = `SLL;
+                        3'b101 : newop = classop3 == 7'b0000000 ? `SRL : `SRA;
+                    endcase                 
+                end
+                `classRR : begin
+                    case (classop2) 
+                        3'b000 : newop = classop3 == 7'b0000000 ? `ADD : `SUB;
+                        3'b001 : newop = `SLL;
+                        3'b010 : newop = `SLT;
+                        3'b011 : newop = `SLTU;
+                        3'b100 : newop = `XOR;
+                        3'b101 : newop = classop3 == 7'b0000000 ? `SRL : `SRA;
+                        3'b110 : newop = `OR;
+                        3'b111 : newop = `AND;
+                    endcase                  
+                end
+                `classLoad : begin
+                    case (classop2)
+                        3'b000 : newop = `LB;
+                        3'b001 : newop = `LH;
+                        3'b010 : newop = `LW;
+                        3'b100 : newop = `LBU;
+                        3'b101 : newop = `LHU;
+                    endcase                  
+                end
+                `classSave : begin
+                    case (classop2)
+                        3'b000 : newop = `SB;
+                        3'b001 : newop = `SH;
+                        3'b010 : newop = `SW;
+                    endcase                  
+                end
+                `classBranch : begin
+                    case (classop2)
+                        3'b000 : newop = `BEQ;
+                        3'b001 : newop = `BNE;
+                        3'b100 : newop = `BLT;
+                        3'b101 : newop = `BGE;
+                        3'b110 : newop = `BLTU;
+                        3'b111 : newop = `BGEU;
+                    endcase                  
+                end
+                `classLUI : begin
+                    newop = `LUI;
+                end
+                `classAUIPC : begin
+                    newop = `AUIPC;
+                end
+                `classJAL : begin
+                    newop = `JAL;
+                end
+                `classJALR : begin
+                    newop = `JALR;
+                end
             endcase
-        end else if (classop == `classRR) begin
-            case (classop2) 
-                3'b000 : newop = classop3 == 7'b0000000 ? `ADD : `SUB;
-                3'b001 : newop = `SLL;
-                3'b010 : newop = `SLT;
-                3'b011 : newop = `SLTU;
-                3'b100 : newop = `XOR;
-                3'b101 : newop = classop3 == 7'b0000000 ? `SRL : `SRA;
-                3'b110 : newop = `OR;
-                3'b111 : newop = `AND;
-            endcase
-        end else if (classop == `classLoad) begin
-            case (classop2)
-                3'b000 : newop = `LB;
-                3'b001 : newop = `LH;
-                3'b010 : newop = `LW;
-                3'b100 : newop = `LBU;
-                3'b101 : newop = `LHU;
-            endcase
-        end else if (classop == `classSave) begin
-            case (classop2)
-                3'b000 : newop = `SB;
-                3'b001 : newop = `SH;
-                3'b010 : newop = `SW;
-            endcase
-        end else if (classop == `classBranch) begin
-            case (classop2)
-                3'b000 : newop = `BEQ;
-                3'b001 : newop = `BNE;
-                3'b100 : newop = `BLT;
-                3'b101 : newop = `BGE;
-                3'b110 : newop = `BLTU;
-                3'b111 : newop = `BGEU;
-            endcase
-        end else if (classop == `classLUI) begin
-            newop = `LUI;
-        end else if (classop == `classAUIPC) begin
-            newop = `AUIPC;
-        end else if (classop == `classJAL) begin
-            newop = `JAL;
-        end else if (classop == `classJALR) begin
-            newop = `JALR;
         end
     end
 

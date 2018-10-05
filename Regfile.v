@@ -38,7 +38,7 @@ module Regfile(
 				if (namew) begin
 					data[namew] <= dataw;
 					if (tag[namew] == tagw) begin
-					tag[namew] <= `tagFree;
+						tag[namew] <= `tagFree;
 					end
 				end
 			end
