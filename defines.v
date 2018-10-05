@@ -13,6 +13,7 @@
 `define newopWidth      5 
 `define robPointerWidth 3
 `define robOpWidith     3
+`define aluRSWidth      4
 
 `define RSsize          4
 `define regCnt          32

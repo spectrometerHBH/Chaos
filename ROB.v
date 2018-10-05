@@ -6,6 +6,8 @@ module ROB(
     input clk,
     input rst,
     //input from Decoder
+    input wire robInsertEnable,
+    input wire [`robWidth - 1 : 0] instToInsert,
     input wire [`tagWidth - 1 : 0] tagCheck1,
     input wire [`tagWidth - 1 : 0] tagCheck2,
     //output to Decoder
@@ -58,11 +60,28 @@ module ROB(
     integer i;
     always @ (posedge clk) begin
         if (rst) begin
-            frontPointer   <= 1'b0;
-            tailPointer    <= 1'b0;
-            counter <= 1'b0;
+            frontPointer <= 1'b0;
+            tailPointer  <= 1'b0;
+            counter      <= 1'b0;
             for (i = 0; i < `ROBsize - 1; i = i + 1)
                 rob[i] <= `ROBsize'b0;
+        end else begin
+            //Kick front
+            if (headFinish) begin
+                counter <= counter - 1;
+                rob[frontPointer] <= {(`robWidth){1'b0}};
+                frontPointer <= frontPointer + 1;
+            end
+            //Insert inst
+            if (freeState) begin
+                if (robInsertEnable) begin
+                    counter <= counter + 1;
+                    rob[tailPointer] <= instToInsert;
+                    tailPointer <= tailPointer + 1; 
+                end
+            end
+            //Pull update from CDB
+            
         end
     end
 
