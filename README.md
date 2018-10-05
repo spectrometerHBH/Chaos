@@ -5,7 +5,7 @@ ACM Class CPU project
 ## RISCV32I Instruction Set 
 
 ### Integer Computational Insturctions
-1. **Integer R-I Instructions **   
+1. **Integer R-I Instructions**   
 
     [] ADDI  
 
@@ -54,9 +54,9 @@ ACM Class CPU project
 
 ### Control Transfer Instructions
 1. **Unconditional Jumps**  
-    [] JAL  
+    	[] JAL  
 
-  [] JALR  
+  	[] JALR  
 
 2. **Conditional Branches**  
 	[] BEQ  
