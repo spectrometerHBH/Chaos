@@ -91,4 +91,7 @@
 `define OR     5'b11011   
 `define AND    5'b11100
 
+`define VALID   1'b1
+`define INVALID 1'b0
+
 `endif
