@@ -1,23 +1,25 @@
 `ifndef __DEFINES__
 `define __DEFINES__
 
-`define classOpWidth    7
-`define classOp2Width   3
-`define classOp3Width   7
-`define tagWidth        4
-`define dataWidth       32
-`define instWidth       32
-`define addrWidth       32
-`define regWidth        5 
-`define RIImmWidth      12
-`define newopWidth      5 
-`define robPointerWidth 3
-`define robOpWidith     3
-`define aluRSWidth      4
+`define classOpWidth      7
+`define classOp2Width    3
+`define classOp3Width    7
+`define tagWidth         4
+`define dataWidth        32
+`define instWidth        32
+`define addrWidth        32
+`define regWidth         5 
+`define RIImmWidth       12
+`define newopWidth       5 
+`define robPointerWidth  3
+`define robOpWidith      3
+`define aluRSWidth       4
+`define branchALURSWidth 4
 
-`define RSsize          4
-`define regCnt          32
-`define ROBsize         8
+`define aluRSsize        4
+`define branchALURSsize  4
+`define regCnt           32
+`define ROBsize          8
 
 `define classOpRange    6  : 0  
 `define classOp2Range   14 : 12
@@ -27,14 +29,22 @@
 `define rs2Range        24 : 20
 `define ImmRange        31 : 20
 
-`define aluWidth        109
-`define aluOpRange      4  : 0
-`define aluData1Range   36 : 5
-`define aluTag1Range    40 : 37
-`define aluData2Range   72 : 41
+`define aluWidth          109
+`define aluOpRange        4  : 0
+`define aluData1Range     36 : 5
+`define aluTag1Range      40 : 37
+`define aluData2Range     72 : 41
 `define aluData2Low5Range 45 : 41 
-`define aluTag2Range    76 : 73
-`define aluDestRange   108 : 77
+`define aluTag2Range      76 : 73
+`define aluDestRange      108 : 77
+
+`define branchALUWidth      109
+`define branchALUOpRange    4  : 0
+`define branchALUData1Range 36 : 5
+`define branchALUTag1Range  40 : 37
+`define branchALUData2Range 72 : 41
+`define branchALUTag2Range  76 : 73
+`define branchALUDestRange  108 : 77
 
 `define robWidth        68   
 `define robOpRange      2  : 0 
@@ -42,7 +52,6 @@
 `define robRegRange     7  : 3
 `define robDataRange    66 : 35
 `define robReadyRange   67 : 67
-
 `define robClassNormal  3'b000
 `define robClassBranch  3'b001
 `define robClassSW      3'b010

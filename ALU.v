@@ -6,7 +6,7 @@ module ALU(
     input clk, 
     input rst,
     //output to Fetcher
-    output reg [`RSsize     - 1 : 0] freeState,
+    output reg [`aluRSsize     - 1 : 0] freeState,
     //input from Decoder
     input wire aluEnable, 
     input wire [`aluWidth   - 1 : 0] inst,  
@@ -26,10 +26,10 @@ module ALU(
     output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data
 );
     //{Dest, Tag2, Data2, Tag1, Data1, Op}
-    reg  [`aluWidth - 1 : 0] RS[`RSsize - 1 : 0];
-    reg  [`RSsize   - 1 : 0] readyState;
-    wire [`RSsize   - 1 : 0] empty;
-    wire [`RSsize   - 1 : 0] ready;
+    reg  [`aluWidth - 1 : 0] RS[`aluRSsize - 1 : 0];
+    reg  [`aluRSsize   - 1 : 0] readyState;
+    wire [`aluRSsize   - 1 : 0] empty;
+    wire [`aluRSsize   - 1 : 0] ready;
 
     assign empty = freeState & (-freeState);
     assign ready = readyState & (-readyState);
@@ -37,7 +37,7 @@ module ALU(
     integer i;
     //Supervise free and ready situation
     always @ (*) begin
-        for (i = 0; i < `RSsize; i = i + 1) begin
+        for (i = 0; i < `aluRSsize; i = i + 1) begin
             freeState[i] = (RS[i][`aluOpRange] == `NOP) ? 0 : 1;  
             readyState[i] = (RS[i][`aluOpRange] != `NOP && RS[i][`aluData1Range] == `tagFree && RS[i][`aluData2Range] == `tagFree) ? 1 : 0;
         end      
@@ -46,13 +46,13 @@ module ALU(
     //Pull update from CDB
     always @ (negedge clk) begin
         if (rst) begin
-            for (i = 0; i < `RSsize; i = i + 1) begin
+            for (i = 0; i < `aluRSsize; i = i + 1) begin
                 RS[i] <= `aluWidth'b0;
             end  
         end else begin
             if (aluFinish) begin
                 RS[ALU_CDB_RSnum] <= {(`aluWidth){1'b0}};
-                for (i = 0; i < `RSsize; i = i + 1) begin
+                for (i = 0; i < `aluRSsize; i = i + 1) begin
                     if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == ALU_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
                         RS[i][`aluData1Range] <= ALU_CDB_data;
                         RS[i][`aluTag1Range]  <= `tagFree;  
@@ -64,7 +64,7 @@ module ALU(
                 end
             end
             if (LSBuf_CDB_valid) begin
-                for (i = 0; i < `RSsize; i = i + 1) begin
+                for (i = 0; i < `aluRSsize; i = i + 1) begin
                     if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == LSBuf_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
                         RS[i][`aluData1Range] <= LSBuf_CDB_data;
                         RS[i][`aluTag1Range]  <= `tagFree;  
@@ -84,13 +84,13 @@ module ALU(
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
-            for (i = 0; i < `RSsize; i = i + 1) begin
+            for (i = 0; i < `aluRSsize; i = i + 1) begin
                 RS[i] <= `aluWidth'b0;
             end  
         end else begin
             if (aluEnable & empty) begin
-                for (i = 0; i < `RSsize; i = i + 1) begin
-                    if (empty == ((1'b1) << `RSsize) >> (`RSsize - i - 1)) begin
+                for (i = 0; i < `aluRSsize; i = i + 1) begin
+                    if (empty == ((1'b1) << `aluRSsize) >> (`aluRSsize - i - 1)) begin
                         RS[i] <= inst;
                     end 
                 end
@@ -99,8 +99,8 @@ module ALU(
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
-            for (i = 0; i < `RSsize; i = i + 1) begin
-                if (ready == ((1'b1) << `RSsize) >> (`RSsize - i - 1)) begin
+            for (i = 0; i < `aluRSsize; i = i + 1) begin
+                if (ready == ((1'b1) << `aluRSsize) >> (`aluRSsize - i - 1)) begin
                     aluSignal <= `VALID;
                     ALU_CDB_out_tag <= RS[i][`aluDestRange];
                     ALU_CDB_out_RSnum <= i;

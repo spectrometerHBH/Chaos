@@ -95,7 +95,7 @@ module ROB(
     always @ (negedge clk) begin
         if (ALU_CDB_tag) begin
             rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
-            
+            rob[ALU_CDB_robNumber][`robReadyRange] <= 1;
         end
 
         if (branch_ROB_valid) begin
@@ -112,7 +112,7 @@ module ROB(
             frontPointer <= 1'b0;
             tailPointer  <= 1'b0;
             counter      <= 1'b0;
-            for (i = 0; i < `ROBsize - 1; i = i + 1)
+            for (i = 0; i < `ROBsize; i = i + 1)
                 rob[i] <= `ROBsize'b0;
         end else begin
             //Kick front

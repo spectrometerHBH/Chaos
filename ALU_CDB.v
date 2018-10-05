@@ -10,7 +10,6 @@ module ALU_CDB(
     input wire [`aluRSWidth - 1 : 0] aluRSNumIn,
     input wire [`tagWidth   - 1 : 0] aluTagIn,
     input wire [`dataWidth  - 1 : 0] aluDataIn,
-
     //output to ALU
     output wire aluFinish,
     output wire [`aluRSWidth - 1 : 0] aluRSNumOut,
