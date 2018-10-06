@@ -1,25 +1,29 @@
 `ifndef __DEFINES__
 `define __DEFINES__
 
-`define classOpWidth      7
-`define classOp2Width    3
-`define classOp3Width    7
-`define tagWidth         4
-`define dataWidth        32
-`define instWidth        32
-`define addrWidth        32
-`define regWidth         5 
-`define RIImmWidth       12
-`define newopWidth       5 
-`define robPointerWidth  3
-`define robOpWidith      3
-`define aluRSWidth       4
-`define branchALURSWidth 4
+`define classOpWidth       7
+`define classOp2Width      3
+`define classOp3Width      7
+`define tagWidth           4
+`define dataWidth          32
+`define instWidth          32
+`define addrWidth          32
+`define regWidth           5 
+`define RIImmWidth         12
+`define newopWidth         5 
+`define robPointerWidth    3
+`define robOpWidith        3
+`define aluRSWidth         4
+`define branchALURSWidth   4
+`define branchAddrWidth    2
+`define historyTableWidth  2
+`define globalHistoryWidth 2
 
-`define aluRSsize        4
-`define branchALURSsize  4
-`define regCnt           32
-`define ROBsize          8
+`define aluRSsize         4
+`define branchALURSsize   4
+`define regCnt            32
+`define ROBsize           8
+`define predictorSize     16
 
 `define classOpRange    6  : 0  
 `define classOp2Range   14 : 12

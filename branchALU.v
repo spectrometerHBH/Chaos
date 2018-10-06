@@ -109,7 +109,7 @@ module branchALU(
 					branchALU_CDB_out_tag <= RS[i][`aluDestRange];
 					branchALU_CDB_out_RSnum <= i;
 					case (RS[i][`branchALUOpRange])
-						`BEQ  : branchALU_CDB_out_data <=
+						`BEQ  : branchALU_CDB_out_data <= 
 						`BNE  : branchALU_CDB_out_data <= 
 						`BLT  : branchALU_CDB_out_data <=
 						`BGE  : branchALU_CDB_out_data <=

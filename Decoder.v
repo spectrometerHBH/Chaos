@@ -11,6 +11,9 @@ module Decoder(
     //output to ALU
     output reg aluEnable,
     output reg [`aluWidth - 1 : 0] aluData,
+    //output to branchALU
+    output reg branchALUEnable,
+    output reg [`branchALUWidth - 1 : 0] branchALUData,
     //input from ROB
     input wire tag1Ready,
     input wire tag2Ready,
@@ -44,6 +47,7 @@ module Decoder(
     reg  [`newopWidth    - 1 : 0] newop;
 
     //Decode the instruction
+    //ALU
     assign classop  = instToDecode[`classOpRange];
     assign classop2 = instToDecode[`classOp2Range];
     assign classop3 = instToDecode[`classOp3Range];
@@ -59,7 +63,9 @@ module Decoder(
     assign data1 = (regTag1 == `tagFree) ? regData1 : robData1;
     assign tag2  = (regTag2 == `tagFree || tag2Ready) ? `tagFree : regTag2;
     assign data2 = (regTag2 == `tagFree) ? regData2 : robData2; 
-
+    //branchALU
+    assign branchImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[8], 1'b0};
+    
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
             newop = `NOP;
