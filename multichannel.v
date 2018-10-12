@@ -56,21 +56,6 @@ module multichannel
 	
 	reg [4:0] priority[CHANNEL-1:0];
 	reg [2:0] skip_read[CHANNEL-1:0];
-	
-	//wire [4:0] max_priority[CHANNEL-1:0];
-	//wire [CHANNEL_BIT-1:0] current_read[CHANNEL-1:0];
-	
-//	assign max_priority[0] = write_buffer_empty[0] ? 0 : priority[0];
-//	assign current_read[0] = 0;
-	
-//	genvar i;
-//	generate
-//		for(i=1; i < CHANNEL; i=i+1) begin
-//			assign max_priority[i] = !write_buffer_empty[i] && priority[i] > max_priority[i-1] ? priority[i] : max_priority[i-1];
-//			assign current_read[i] = !write_buffer_empty[i] && 
-//				(priority[i] > max_priority[i-1] || (priority[i] == max_priority[i-1] && skip_read[i] > skip_read[current_read[i-1]])) ? i : current_read[i-1];
-//		end
-//	endgenerate
 
 	reg [4:0] max_priority_array[CHANNEL-1:0];
 	reg [CHANNEL_BIT-1:0] current_read_array[CHANNEL-1:0];

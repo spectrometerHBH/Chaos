@@ -30,6 +30,7 @@ ACM Class CPU project
     [] AUIPC	(add upper imm to PC)
 
 2. **Integer R-R Instructions**  
+
     [] ADD  
 
     [] SUB  
@@ -54,11 +55,13 @@ ACM Class CPU project
 
 ### Control Transfer Instructions
 1. **Unconditional Jumps**  
-    	[] JAL  
+    
+    [] JAL  
 
   	[] JALR  
 
 2. **Conditional Branches**  
+	
 	[] BEQ  
 	
 	[] BNE  
@@ -74,6 +77,7 @@ ACM Class CPU project
 
 ### Load & Store Instructions
 1. **Load**  
+	
 	[] LB  
 	
 	[] LH  
@@ -85,6 +89,7 @@ ACM Class CPU project
 	[] LHU  
 	
 2. **Save**  
+	
 	[] SB  
 	
 	[] SH  
