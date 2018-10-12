@@ -3,7 +3,10 @@
 `include "defines.v"
 
 module PC(
-    
+    input wire clk, 
+    input wire rst,
+
+
 );
     
 endmodule

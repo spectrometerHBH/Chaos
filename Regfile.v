@@ -49,15 +49,23 @@ module Regfile(
 	end
 
     always @ (*) begin
-		if (enWrite && name1 == namew) begin
+		if (rst) begin
+			data1 <= 0;
+			tag1  <= `tagFree;
+		end else if (enWrite && name1 == namew) begin
 			data1 = dataw;
 			tag1  = tagw;
 		end else begin
 			data1 = data[name1];
 			tag1  = tag [name1];
 		end
+	end
 
-		if (enWrite && name2 == namew) begin
+	always @ (*) begin
+		if (rst) begin
+			data2 <= 0;
+			tag2  <= `tagFree;
+		end else if (enWrite && name2 == namew) begin
 			data2 = dataw;
 			tag2  = tagw;
 		end else begin

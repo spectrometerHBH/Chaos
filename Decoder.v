@@ -35,7 +35,11 @@ module Decoder(
     output wire [`regWidth - 1 : 0] regAddr2,
     output reg regEnable,
     output reg [`regWidth - 1 : 0] regTagAddr,
-    output reg [`tagWidth - 1 : 0] regTag
+    output reg [`tagWidth - 1 : 0] regTag,
+    //input from branchPredictor
+    input wire predictionFromPredictor,
+    //output to branchPredictor
+    output wire [`branchAddrWidth - 1 : 0] branchAddr
 );
     wire [`classOpWidth  - 1 : 0] classop;
     wire [`classOp2Width - 1 : 0] classop2;
@@ -44,6 +48,7 @@ module Decoder(
     wire [`regWidth      - 1 : 0] rd, rs1, rs2;
     wire [`dataWidth     - 1 : 0] data1, data2;
     wire [`tagWidth      - 1 : 0] tag1,  tag2;
+    reg prediction;
     reg  [`newopWidth    - 1 : 0] newop;
 
     //Decode the instruction
@@ -63,9 +68,6 @@ module Decoder(
     assign data1 = (regTag1 == `tagFree) ? regData1 : robData1;
     assign tag2  = (regTag2 == `tagFree || tag2Ready) ? `tagFree : regTag2;
     assign data2 = (regTag2 == `tagFree) ? regData2 : robData2; 
-    //branchALU
-    assign branchImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[8], 1'b0};
-    
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
             newop = `NOP;
@@ -136,9 +138,29 @@ module Decoder(
             endcase
         end
     end
+    
+    //branchALU & JAL & JALR
+    assign branchImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[8], 1'b0};
 
+    always @ (*) begin
+        if (tag1 == `tagFree && tag2 == `tagFree) begin
+            case (newop)
+                `BEQ  : prediction = data1 == data2 ? 1 : 0;  
+                `BNE  : prediction = data1 != data2 ? 1 : 0;  
+                `BLT  : prediction = $signed(data1) <  $signed(data2) ? 1 : 0;
+                `BGE  : prediction = $signed(data1) >= $signed(data2) ? 1 : 0;
+                `BLTU : prediction = data1 <  data2 ? 1 : 0;
+                `BGEU : prediction = data1 >= data2 ? 1 : 0;
+            endcase
+        end else begin
+            prediction = predictionFromPredictor;
+        end
+    end
+
+    assign predictWay = prediction ? branchImm : 4;
+    
     //Write TO FU, ROB and Regfile
-    always @ (negedge clk) begin
+    always @ (posedge clk) begin
         aluEnable <= 0;
         robEnable <= 0;
         regEnable <= 0;
@@ -170,7 +192,7 @@ module Decoder(
                 regTag <= ROBtail;
             end
             `classLoad : begin
-
+                
             end
             `classSave : begin
               
@@ -192,4 +214,5 @@ module Decoder(
             end
             default : ;
     end
+    
 endmodule

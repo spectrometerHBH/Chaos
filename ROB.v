@@ -3,8 +3,8 @@
 `include "defines.v"
 
 module ROB(
-    input clk,
-    input rst,
+    input wire clk,
+    input wire rst,
     //input from Decoder
     input wire robInsertEnable,
     input wire [`robWidth - 1 : 0] instToInsert,

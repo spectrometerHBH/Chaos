@@ -3,8 +3,8 @@
 `include "defines.v"
 
 module ALU_CDB(
-    input clk,
-    input rst, 
+    input wire clk,
+    input wire rst, 
     //input from ALU
     input wire aluSignal,
     input wire [`aluRSWidth - 1 : 0] aluRSNumIn,

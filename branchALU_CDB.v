@@ -3,8 +3,8 @@
 `include "defines.v"
 
 module branchALU_CDB(
-    input clk,
-    input rst, 
+    input wire clk,
+    input wire rst, 
     //input from branchALU
     input wire branchALUSignal,
     input wire [`branchALURSWidth - 1 : 0] branchALURSNumIn,

@@ -3,8 +3,8 @@
 `include "defines.v"
 
 module ALU(
-    input clk, 
-    input rst,
+    input wire clk, 
+    input wire rst,
     //output to Fetcher
     output reg [`aluRSsize     - 1 : 0] freeState,
     //input from Decoder
@@ -23,7 +23,9 @@ module ALU(
     output reg aluSignal,
     output reg [`aluRSWidth - 1 : 0] ALU_CDB_out_RSnum, 
     output reg [`tagWidth   - 1 : 0] ALU_CDB_out_tag,
-    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data
+    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data,
+    //input from ROB
+    input wire mispredictionRst
 );
     //{Dest, Tag2, Data2, Tag1, Data1, Op}
     reg  [`aluWidth - 1 : 0] RS[`aluRSsize - 1 : 0];

@@ -3,8 +3,8 @@
 `include "defines.v"
 
 module branchALU(
-	input clk, 
-	input rst,
+	input wire clk, 
+	input wire rst,
 	//output to Fetcher
 	output reg [`branchALURSsize - 1 : 0] freeState,
 	//input from Decoder
