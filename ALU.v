@@ -5,8 +5,8 @@
 module ALU(
     input wire clk, 
     input wire rst,
-    //output to Fetcher
-    output reg [`aluRSsize     - 1 : 0] freeState,
+    //output to IFetcher
+    output wire free,
     //input from Decoder
     input wire aluEnable, 
     input wire [`aluWidth   - 1 : 0] inst,  
@@ -37,6 +37,7 @@ module ALU(
 
     assign empty = freeState & (-freeState);
     assign ready = readyState & (-readyState);
+    assign free  = empty != 0 ? 1 : 0;
 
     integer i;
     //Supervise free and ready situation

@@ -3,6 +3,8 @@
 `include "defines.v"
 
 module IFetcher(
+	input  wire clk,
+	input  wire rst,
 	//input from PC
 	input  wire [`addrWidth - 1 : 0] PC
 	//output to ICache
@@ -17,7 +19,11 @@ module IFetcher(
 	//output to IF/ID
 	output reg  [`instWidth - 1 : 0] inst,
 	//output to staller
-	output reg  stall_req
+	output reg  stall_req,
+	//input from ALURS
+	input  wire alu_free
+	//input fform ROB
+	input  wire rob_free
 );
 	
 	assign addr = PC;
@@ -28,13 +34,17 @@ module IFetcher(
 			addr     = `addrWidth'b0;
 		end else begin
 			if (ICache_done) begin
+				//done = 1
 				inst      = read_data;
 				stall_req = 0;
 			end else if (ICache_busy) begin
+				//busy = 1 done = 0
 				rw_flag   = 0;
 				stall_req = 1;
 			end else if (!ICache_busy) begin
-				rw_flag   = 1;
+				//busy = 0 done = 0
+				if (alu_free && rob_free) rw_flag   = 1;
+				else rw_flag = 0;
 				stall_req = 1;
 			end
 		end

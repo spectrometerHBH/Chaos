@@ -50,17 +50,18 @@
 `define branchALUTag2Range  76 : 73
 `define branchALUDestRange  108 : 77
 
-`define robWidth        68   
-`define robOpRange      2  : 0 
-`define robAddrRange    34 : 3 
-`define robRegRange     7  : 3
-`define robDataRange    66 : 35
-`define robReadyRange   67 : 67
-`define robClassNormal  3'b000
-`define robClassBranch  3'b001
-`define robClassSW      3'b010
-`define robClassSH      3'b011
-`define robClassSB      3'b100
+`define robWidth         69   
+`define robOpRange       2  : 0 
+`define robAddrRange     34 : 3 
+`define robRegRange      7  : 3
+`define robDataRange     66 : 35
+`define robReadyRange    67 : 67
+`define robCompleteRange 68 : 68
+`define robClassNormal   3'b000
+`define robClassBranch   3'b001
+`define robClassSW       3'b010
+`define robClassSH       3'b011
+`define robClassSB       3'b100
 
 `define tagFree     4'b1000
 

@@ -183,7 +183,7 @@ module Decoder(
                         ROBtail, `tagFree, Imm, tag1, data1, newop
                     };    
                     robData <= {
-                        1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                        1'b0, {`dataWidth{2'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
                     };
                     regTagAddr <= rd;
                     regTag <= ROBtail;
@@ -196,7 +196,7 @@ module Decoder(
                         ROBtail, tag2, data2, tag1, data1, newop
                     };
                     robData <= {
-                        1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                        1'b0, {`dataWidth{2'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
                     };
                     regTagAddr <= rd;
                     regTag <= ROBtail;
@@ -226,5 +226,5 @@ module Decoder(
                 default : ;
         end
     end
-    
+
 endmodule

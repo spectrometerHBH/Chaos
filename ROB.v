@@ -20,6 +20,8 @@ module ROB(
     input wire ALU_ROB_valid,
     input wire [`tagWidth  - 1 : 0] ALU_CDB_tag,
     input wire [`dataWidth - 1 : 0] ALU_CDB_data,
+    
+    /*
     //input from branchCDB
     input wire branch_ROB_valid,
     input wire [`tagWidth  - 1 : 0] branch_CDB_tag,
@@ -28,7 +30,9 @@ module ROB(
     input wire LSBuf_ROB_valid,
     input wire [`tagWidth  - 1 : 0] LSBuf_CDB_tag,
     input wire [`dataWidth - 1 : 0] LSBuf_CDB_data, 
-    //output to Fetcher
+    */
+
+    //output to IFetcher
     output wire freeState,
     //output to Regfile
     output reg regfileEnable,
@@ -36,21 +40,22 @@ module ROB(
     output reg [`dataWidth - 1 : 0] rob_reg_data,
     output reg [`tagWidth  - 1 : 0] rob_reg_tag
 );
-    //{Ready, Data, Addr, Op}
+    //{Complete, Ready, Data, Addr, Op}
     reg  [`robWidth - 1 : 0] rob[`ROBsize - 1 : 0];
     reg  [`tagWidth - 1 : 0] frontPointer, tailPointer;
     reg  [`tagWidth - 1 : 0] counter;
     wire [`robWidth - 1 : 0] head;
     wire [`tagWidth - 2 : 0] ALU_CDB_robNumber, branch_CDB_robNumber, LSBuf_CDB_robNumber;
-    reg regEnable;
+    reg  regEnable;
 
     assign head                 = rob[frontPointer];
-    assign headFinish           = (counter != 0 && rob[frontPointer][`robReadyRange]) ? 1 : 0;
+    assign headFinish           = (counter != 0 && rob[frontPointer][`robCompleteRange]) ? 1 : 0;
+    assign headReady            = (counter != 0 && rob[frontPointer][`robReadyRange])    ? 1 : 0;
     assign freeState            = (counter < `ROBsize) ? 1 : 0;
     assign tailptr              = tailPointer;
     assign ALU_CDB_robNumber    = ALU_CDB_tag   [`tagWidth - 2 : 0];
-    assign branch_CDB_robNumber = branch_CDB_tag[`tagWidth - 2 : 0];
-    assign LSBuf_CDB_robNumber  = LSBuf_CDB_rag [`tagWidth - 2 : 0];
+    //assign branch_CDB_robNumber = branch_CDB_tag[`tagWidth - 2 : 0];
+    //assign LSBuf_CDB_robNumber  = LSBuf_CDB_rag [`tagWidth - 2 : 0];
     
     //Decoder Tag Check
     always @ (*) begin
@@ -62,7 +67,7 @@ module ROB(
             ALU_CDB_tag : begin
                 tag1Ready = 1;
                 data1 = ALU_CDB_data;
-            end
+            end/*
             LSBuf_CDB_tag : begin
                 tag1Ready = 1;
                 data1 = LSBuf_CDB_data;
@@ -70,7 +75,7 @@ module ROB(
             default : begin
                 tag1Ready = rob[tagCheck1][`robReadyRange];
                 data1 = rob[tagCheck1][`robDataRange];
-            end
+            end*/
         endcase
         case (tagCheck2) 
             `tagFree : begin
@@ -80,7 +85,7 @@ module ROB(
             ALU_CDB_tag : begin
                 tag2Ready = 1;
                 data2 = ALU_CDB_data;
-            end
+            end/*
             LSBuf_CDB_tag : begin
                 tag2Ready = 1;
                 data2 = LSBuf_CDB_data;
@@ -88,22 +93,23 @@ module ROB(
             default : begin
                 tag2Ready = rob[tagCheck2][`robReadyRange];
                 data2 = rob[tagCheck2][`robDataRange];
-            end
+            end*/
         endcase
     end
 
+    //Pull update from CDB
     always @ (negedge clk) begin
-        if (ALU_CDB_tag) begin
+        if (ALU_ROB_valid) begin
             rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
             rob[ALU_CDB_robNumber][`robReadyRange] <= 1;
         end
-
+        /*
         if (branch_ROB_valid) begin
         end
 
         if (LSBuf_ROB_valid) begin
 
-        end
+        end*/
     end
 
     integer i;
@@ -135,13 +141,14 @@ module ROB(
     //Execute front
     always @ (*) begin
         regEnable <= 0;
-        if (counter && headFinish) begin
+        if (counter && headReady) begin
             case (head[`robOpRange])
                 `robClassNormal: begin
                     regEnable <= 1;
                     rob_reg_name <= head[`robRegRange];
                     rob_reg_data <= head[`robDataRange];
                     rob_reg_tag  <= frontPointer;  
+                    head[`robCompleteRange] <= 1;
                 end
                 default : ;
             endcase  
