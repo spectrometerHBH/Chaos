@@ -1,7 +1,7 @@
 // Written by Zhekai Zhang
 `timescale 1ns / 1ps
 
-`include "defines.h"
+`include "defines.v"
 
 module memory_controller
 	#(

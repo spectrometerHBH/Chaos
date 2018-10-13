@@ -5,7 +5,7 @@
 module Decoder(
     input wire clk,
     input wire rst,
-    //input from IF_UD
+    //input from IF_ID
     input wire decoderEnable,
     input wire [`instWidth-1 : 0] instToDecode,
     //output to ALU
@@ -168,7 +168,6 @@ module Decoder(
     */
 
     //Write TO FU, ROB and Regfile
-
     always @ (posedge clk) begin
         aluEnable <= 0;
         robEnable <= 0;

@@ -16,7 +16,6 @@ module IF_ID(
 );
 	always @(posedge clk or posedge rst) begin
 		if (rst) begin
-			// reset
 			valid 	    <= 0;
 			inst_output <= `instWidth'b0;
 		end

@@ -48,13 +48,13 @@ module ALU_CDB(
             aluFinish <= 0;
             valid_ROB <= 0;
             dataInfo  <= `dataWidth'b0;
-            tagInfo   <= `tagWidth'b0;
+            tagInfo   <= `tagFree;
         end
         else begin
             aluFinish <= 0;
             valid_ROB <= 0;
             dataInfo  <= `dataWidth'b0;
-            tagInfo   <= `tagWidth'b0;
+            tagInfo   <= `tagFree;
             if (aluSignal) begin
                 aluFinish   <= 1;
                 valid_ROB   <= 1;
