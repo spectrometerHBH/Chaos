@@ -10,10 +10,12 @@ module ALU(
     //input from Decoder
     input wire aluEnable, 
     input wire [`aluWidth   - 1 : 0] inst,  
+    /*
     //input from LSBufCDB
     input wire LSBuf_CDB_valid,
     input wire [`tagWidth   - 1 : 0] LSBuf_CDB_tag,
     input wire [`dataWidth  - 1 : 0] LSBuf_CDB_data,
+    */
     //input from aluCDB
     input wire aluFinish,
     input wire [`aluRSWidth - 1 : 0] ALU_CDB_RSnum,
@@ -25,7 +27,7 @@ module ALU(
     output reg [`tagWidth   - 1 : 0] ALU_CDB_out_tag,
     output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data,
     //input from ROB
-    input wire mispredictionRst
+    //input wire mispredictionRst
 );
     //{Dest, Tag2, Data2, Tag1, Data1, Op}
     reg  [`aluWidth - 1 : 0] RS[`aluRSsize - 1 : 0];

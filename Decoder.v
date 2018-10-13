@@ -5,15 +5,19 @@
 module Decoder(
     input wire clk,
     input wire rst,
-    //input from IF
+    //input from IF_UD
     input wire decoderEnable,
     input wire [`instWidth-1 : 0] instToDecode,
     //output to ALU
     output reg aluEnable,
     output reg [`aluWidth - 1 : 0] aluData,
+
+    /*
     //output to branchALU
     output reg branchALUEnable,
     output reg [`branchALUWidth - 1 : 0] branchALUData,
+    */
+
     //input from ROB
     input wire tag1Ready,
     input wire tag2Ready,
@@ -35,11 +39,13 @@ module Decoder(
     output wire [`regWidth - 1 : 0] regAddr2,
     output reg regEnable,
     output reg [`regWidth - 1 : 0] regTagAddr,
-    output reg [`tagWidth - 1 : 0] regTag,
+    output reg [`tagWidth - 1 : 0] regTag
+
+    /*,
     //input from branchPredictor
     input wire predictionFromPredictor,
     //output to branchPredictor
-    output wire [`branchAddrWidth - 1 : 0] branchAddr
+    output wire [`branchAddrWidth - 1 : 0] branchAddr*/
 );
     wire [`classOpWidth  - 1 : 0] classop;
     wire [`classOp2Width - 1 : 0] classop2;
@@ -138,6 +144,7 @@ module Decoder(
             endcase
         end
     end
+    /*
     
     //branchALU & JAL & JALR
     assign branchImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[8], 1'b0};
@@ -158,61 +165,66 @@ module Decoder(
     end
 
     assign predictWay = prediction ? branchImm : 4;
-    
+    */
+
     //Write TO FU, ROB and Regfile
+
     always @ (posedge clk) begin
         aluEnable <= 0;
         robEnable <= 0;
         regEnable <= 0;
-        case (classop)
-            `classRI : begin
-                aluEnable <= 1;
-                robEnable <= 1;
-                regEnable <= 1;
-                aluData <= {
-                    ROBtail, `tagFree, Imm, tag1, data1, newop
-                };    
-                robData <= {
-                    1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
-                };
-                regTagAddr <= rd;
-                regTag <= ROBtail;
-            end
-            `classRR : begin
-                aluEnable <= 1;
-                robEnable <= 1;
-                regEnable <= 1;
-                aluData <= {
-                    ROBtail, tag2, data2, tag1, data1, newop
-                };
-                robData <= {
-                    1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
-                };
-                regTagAddr <= rd;
-                regTag <= ROBtail;
-            end
-            `classLoad : begin
-                
-            end
-            `classSave : begin
-              
-            end
-            `classBranch : begin
-              
-            end
-            `classLUI : begin
+        if (decoderEnable) begin
+            case (classop)
+                `classRI : begin
+                    aluEnable <= 1;
+                    robEnable <= 1;
+                    regEnable <= 1;
+                    aluData <= {
+                        ROBtail, `tagFree, Imm, tag1, data1, newop
+                    };    
+                    robData <= {
+                        1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                    };
+                    regTagAddr <= rd;
+                    regTag <= ROBtail;
+                end
+                `classRR : begin
+                    aluEnable <= 1;
+                    robEnable <= 1;
+                    regEnable <= 1;
+                    aluData <= {
+                        ROBtail, tag2, data2, tag1, data1, newop
+                    };
+                    robData <= {
+                        1'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                    };
+                    regTagAddr <= rd;
+                    regTag <= ROBtail;
+                end
+                /*
+                `classLoad : begin
+                    
+                end
+                `classSave : begin
+                  
+                end
+                `classBranch : begin
+                  
+                end
+                `classLUI : begin
 
-            end
-            `classAUIPC : begin
-              
-            end
-            `classJAL : begin
-              
-            end
-            `classJALR : begin
-            
-            end
-            default : ;
+                end
+                `classAUIPC : begin
+                  
+                end
+                `classJAL : begin
+                  
+                end
+                `classJALR : begin
+                
+                end*/
+                default : ;
+        end
     end
     
 endmodule
