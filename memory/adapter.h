@@ -7,23 +7,19 @@
 class Adapter
 {
 private:
-	using byte = std::bitset<8>;
-	enum States {
-		IDLE,
-		CHANNEL,
-		LENGTH,
-		DATA,
-		END
-	};
-	static const uint8_t packet_size = 8;
-	static const uint32_t message_bit = 72;
+	enum status{
+		STATUS_IDLE,
+		STATUS_CHANNEL,
+		STATUS_LENGTH,
+		STATUS_DATA,
+		STATUS_END
+	}recv_status;
+	static const int inst_width  = 72;
+	std :: bitset<inst_width> inst;
+	size_t recv_packet_id, recv_bit, recv_length, send_packet_id = 0;
+	void feedback();
+	void send(uint32_t data);
 	
-	States recv_state = IDLE;
-	size_t recv_bit = 0, recv_packet_id = 0, send_packet_id = 1, recv_length = 0;
-	std::bitset<message_bit> get_data;
-
-	void data_handler(const std::vector<uint8_t> datas);
-	void send(const uint32_t datas);
 public:
 	Adapter() : env(nullptr) {}
 
