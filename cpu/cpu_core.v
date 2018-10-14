@@ -7,10 +7,10 @@ module cpu_core(
 	input wire rst,
 	//output to memory_controller
 	output wire [1 * `rw_flagWidth - 1 : 0] rw_flag,
-	output wire [1 * `addrWidth    - 1] addr,
-	output wire [1 * `dataWidth    - 1] read_data,
-	output wire [1 * `dataWidth    - 1] write_data,
-	output wire [1 * `maskWidth    - 1] write_mask,
+	output wire [1 * `addrWidth    - 1 : 0] addr,
+	input  wire [1 * `dataWidth    - 1 : 0] read_data,
+	output wire [1 * `dataWidth    - 1 : 0] write_data,
+	output wire [1 * `maskWidth    - 1 : 0] write_mask,
 	input  wire busy,
 	input  wire done
 );
@@ -20,8 +20,8 @@ module cpu_core(
 	wire [`dataWidth - 1 : 0] ICache_read_data;
 	wire [`dataWidth - 1 : 0] ICache_write_data;
 	wire [`maskWidth - 1 : 0] ICache_write_mask;
-	wire ICache_busy,
-	wire ICache_done, 
+	wire ICache_busy;
+	wire ICache_done; 
 
 	cache ICache(
 		clk, rst,
@@ -32,13 +32,15 @@ module cpu_core(
 		ICache_write_mask,
 		ICache_busy,
 		ICache_done,
+		0,
+		32'b0,
 		rw_flag,
 		addr,
 		read_data,
 		write_data,
 		write_mask,
 		busy,
-		done,
+		done
 	);
 
 	wire [`addrWidth - 1 : 0] PC_IF;
@@ -48,7 +50,7 @@ module cpu_core(
 	wire rob_IF_free;
 	IFetcher IF(
 		clk, rst,
-		PC_IF;
+		PC_IF,
 		ICache_rw_flag,
 		ICache_addr,
 		ICache_write_data,
@@ -80,6 +82,7 @@ module cpu_core(
 	wire [`instWidth - 1 : 0] IF_ID_inst_out;
 	IF_ID IF_ID(
 		clk, rst,
+		IFID_stall,
 		IF_ID_inst,
 		IF_ID_valid,
 		IF_ID_inst_out
@@ -190,7 +193,12 @@ module cpu_core(
 		ID_ROB_data2,
 		ALUCDB_ROB_valid,
 		ALUCDB_ROB_tag,
-		ALUCDB_ROB_data
+		ALUCDB_ROB_data,
+		rob_IF_free,
+		ROB_reg_enable,
+		ROB_reg_name,
+		ROB_reg_data,
+		ROB_reg_tag
 	);
 
 	Regfile regfile(

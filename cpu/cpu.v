@@ -36,7 +36,7 @@ module cpu(
 	wire		UART_sendable;
 	wire		UART_receivable;
 	
-	uart_comm #(.BAUDRATE(5000000), .CLOCKRATE(66667000)) UART(
+	uart #(.BAUDRATE(5000000), .CLOCKRATE(66667000)) UART(
 		CLK, RST,
 		UART_send_flag, UART_send_data,
 		UART_recv_flag, UART_recv_data,
@@ -56,7 +56,7 @@ module cpu(
 	wire					COMM_readable[CHANNEL-1:0];
 	wire					COMM_writable[CHANNEL-1:0];
 	
-	multchan_comm #(.MESSAGE_BIT(MESSAGE_BIT), .CHANNEL_BIT(CHANNEL_BIT)) COMM(
+	multichannel #(.MESSAGE_BIT(MESSAGE_BIT), .CHANNEL_BIT(CHANNEL_BIT)) COMM(
 		CLK, RST,
 		UART_send_flag, UART_send_data,
 		UART_recv_flag, UART_recv_data,

@@ -13,12 +13,12 @@ module ALU_CDB(
     //output to ALU
     output reg aluFinish,
     output reg [`aluRSWidth - 1 : 0] aluRSNumOut,
-    output reg [`tagWidth   - 1 : 0] aluTagOut,
-    output reg [`dataWidth  - 1 : 0] aluDataOut,
+    output wire [`tagWidth   - 1 : 0] aluTagOut,
+    output wire [`dataWidth  - 1 : 0] aluDataOut,
     //output to ROB
     output reg valid_ROB,
-    output reg [`tagWidth   - 1 : 0] robTagOut,
-    output reg [`dataWidth  - 1 : 0] robDataOut
+    output wire [`tagWidth   - 1 : 0] robTagOut,
+    output wire [`dataWidth  - 1 : 0] robDataOut
     /*
     //output to BranchALU
     output wire valid_branch,

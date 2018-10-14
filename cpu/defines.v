@@ -19,7 +19,7 @@
 `define historyTableWidth  2
 `define globalHistoryWidth 2
 `define rw_flagWidth       2
-`define maskWidth          2
+`define maskWidth          4
 
 `define aluRSsize         4
 `define branchALURSsize   4

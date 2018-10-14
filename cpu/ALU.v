@@ -25,13 +25,13 @@ module ALU(
     output reg aluSignal,
     output reg [`aluRSWidth - 1 : 0] ALU_CDB_out_RSnum, 
     output reg [`tagWidth   - 1 : 0] ALU_CDB_out_tag,
-    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data,
+    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data
     //input from ROB
     //input wire mispredictionRst
 );
     //{Dest, Tag2, Data2, Tag1, Data1, Op}
     reg  [`aluWidth - 1 : 0] RS[`aluRSsize - 1 : 0];
-    reg  [`aluRSsize   - 1 : 0] readyState;
+    reg  [`aluRSsize   - 1 : 0] freeState, readyState;
     wire [`aluRSsize   - 1 : 0] empty;
     wire [`aluRSsize   - 1 : 0] ready;
 
@@ -68,6 +68,7 @@ module ALU(
                     end
                 end
             end
+            /*
             if (LSBuf_CDB_valid) begin
                 for (i = 0; i < `aluRSsize; i = i + 1) begin
                     if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == LSBuf_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
@@ -80,6 +81,7 @@ module ALU(
                     end
                 end
             end
+            */
         end
     end
 

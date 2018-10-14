@@ -46,6 +46,7 @@ module ROB(
     reg  [`tagWidth - 1 : 0] counter;
     wire [`robWidth - 1 : 0] head;
     wire [`tagWidth - 2 : 0] ALU_CDB_robNumber, branch_CDB_robNumber, LSBuf_CDB_robNumber;
+    wire headFinish, headReady;
     reg  regEnable;
 
     assign head                 = rob[frontPointer];
@@ -148,7 +149,7 @@ module ROB(
                     rob_reg_name <= head[`robRegRange];
                     rob_reg_data <= head[`robDataRange];
                     rob_reg_tag  <= frontPointer;  
-                    head[`robCompleteRange] <= 1;
+                    rob[frontPointer][`robCompleteRange] <= 1;
                 end
                 default : ;
             endcase  

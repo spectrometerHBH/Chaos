@@ -6,7 +6,7 @@ module PC(
     input wire clk, 
     input wire rst,
     //input from staller
-    input wire PC_stall;
+    input wire PC_stall,
     //output to IFetcher
     output reg [`addrWidth - 1 : 0] PC
 );

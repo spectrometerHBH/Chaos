@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "define.v"
+`include "defines.v"
 
 module IF_ID(
 	input wire clk,
@@ -24,7 +24,7 @@ module IF_ID(
 			inst_output <= `instWidth'b0;
 		end else begin
 			valid 		<= 1;			
-			inst_output <= `inst_input;
+			inst_output <= inst_input;
 		end
 	end
 endmodule

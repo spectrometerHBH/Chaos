@@ -223,6 +223,7 @@ module Decoder(
                 
                 end*/
                 default : ;
+           endcase
         end
     end
 

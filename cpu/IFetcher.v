@@ -6,14 +6,14 @@ module IFetcher(
 	input  wire clk,
 	input  wire rst,
 	//input from PC
-	input  wire [`addrWidth - 1 : 0] PC
+	input  wire [`addrWidth - 1 : 0] PC,
 	//output to ICache
 	output reg  [1 : 0] rw_flag,			 //[0] for read, [1] for write, both zero for stall
-	output wire [`addrWidth : 0] addr,
-	output wire [`dataWidth : 0] write_data, //useless
+	output wire [`addrWidth - 1 : 0] addr,
+	output wire [`dataWidth - 1: 0] write_data, //useless
 	output wire [3 : 0] write_mask,		     //useless	
 	//input from ICache
-	input  wire [`instWidth : 0] read_data,
+	input  wire [`instWidth - 1: 0] read_data,
 	input  wire ICache_busy,
 	input  wire ICache_done,
 	//output to IF/ID
@@ -21,7 +21,7 @@ module IFetcher(
 	//output to staller
 	output reg  stall_req,
 	//input from ALURS
-	input  wire alu_free
+	input  wire alu_free,
 	//input fform ROB
 	input  wire rob_free
 );
@@ -31,7 +31,6 @@ module IFetcher(
 	always @ (*) begin
 		if (rst) begin
 			rw_flag  = 0;
-			addr     = `addrWidth'b0;
 		end else begin
 			if (ICache_done) begin
 				//done = 1
@@ -50,4 +49,4 @@ module IFetcher(
 		end
 	end
 
-end module
+endmodule
