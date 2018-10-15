@@ -3,12 +3,12 @@
 `include "defines.v"
 
 module PC(
-    input wire clk, 
-    input wire rst,
+    (* mark_debug = "true" *) input wire clk, 
+    (* mark_debug = "true" *) input wire rst,
     //input from staller
-    input wire PC_stall,
+    (* mark_debug = "true" *) input wire PC_stall,
     //output to IFetcher
-    output reg [`addrWidth - 1 : 0] PC
+    (* mark_debug = "true" *) output reg [`addrWidth - 1 : 0] PC
 );
     always @(posedge clk or posedge rst) begin
     	if (rst) begin

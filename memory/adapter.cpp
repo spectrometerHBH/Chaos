@@ -42,9 +42,6 @@ void Adapter :: feedback(){
 	}else if (bytes.size() == 9){
 		uint32_t data = (bytes[0]) | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[3] << 24);
 		uint32_t addr = (bytes[4]) | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24);
-		if (addr == 0x104){
-			std :: cout << bytes[0] << std :: endl;
-		}
 		env->WriteMemory(addr, data, bytes[8] & (0x0f));
 	}
 }

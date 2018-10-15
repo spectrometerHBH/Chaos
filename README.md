@@ -4,97 +4,101 @@ ACM Class CPU project
 
 ## RISCV32I Instruction Set 
 
+0 - unsupported
+1 - waiting for test
+2 - complete
+
 ### Integer Computational Insturctions
 1. **Integer R-I Instructions**   
 
-    [] ADDI  
+    [1] ADDI  
 
-    [] SLTI	(set less than imm)  
+    [1] SLTI	(set less than imm)  
 
-    [] SLTIU  
+    [1] SLTIU  
 
-    [] XORI  
+    [1] XORI  
 
-    [] ORI  
+    [1] ORI  
 
-    [] ANDI  
+    [1] ANDI  
 
-    [] SLLI	(logical left shift)  
+    [1] SLLI	(logical left shift)  
 
-    [] SRLI	(logical right shift)  
+    [1] SRLI	(logical right shift)  
 
-    [] SRAI	(arthmetic right shift)  
+    [1] SRAI	(arthmetic right shift)  
 
-    [] LUI	(load upper imm)  
+    [0] LUI	    (load upper imm)  
 
-    [] AUIPC	(add upper imm to PC)
+    [0] AUIPC	(add  upper imm to PC)
 
 2. **Integer R-R Instructions**  
 
-    [] ADD  
+    [1] ADD  
 
-    [] SUB  
+    [1] SUB  
 
-    [] SLT()  
+    [1] SLT()  
 
-    [] SLTU  
+    [1] SLTU  
 
-    [] XOR  
+    [1] XOR  
 
-    [] SLL	(logical left shift)  
+    [1] SLL	(logical left shift)  
 
-    [] SRL      (logical right shift)  
+    [1] SRL      (logical right shift)  
 
-    [] SRA	(arthmetic right shift)  
+    [1] SRA	(arthmetic right shift)  
 
-    [] OR  
+    [1] OR  
 
-    [] AND
+    [1] AND
 
 3. **Nop Instructions**
 
 ### Control Transfer Instructions
 1. **Unconditional Jumps**  
     
-    [] JAL  
+    [0] JAL  
 
-  	[] JALR  
+  	[0] JALR  
 
 2. **Conditional Branches**  
 	
-	[] BEQ  
+	[0] BEQ  
 	
-	[] BNE  
+	[0] BNE  
 	
-	[] BLT  
+	[0] BLT  
 	
-	[] BGE  
+	[0] BGE  
 	
-	[] BLTU  
+	[0] BLTU  
 	
-	[] BGEU  
+	[0] BGEU  
 	
 
 ### Load & Store Instructions
 1. **Load**  
 	
-	[] LB  
+	[0] LB  
 	
-	[] LH  
+	[0] LH  
 	
-	[] LW  
+	[0] LW  
 	
-	[] LBU  
+	[0] LBU  
 	
-	[] LHU  
+	[0] LHU  
 	
 2. **Save**  
 	
-	[] SB  
+	[0] SB  
 	
-	[] SH  
+	[0] SH  
 
-	[] SW  
+	[0] SW  
 
 ## Tomasulo
 Tomasulo with ROB and speculation

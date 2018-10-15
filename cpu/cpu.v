@@ -5,7 +5,7 @@
 `include "defines.v"
 
 module cpu(
-	input  wire EXCLK,
+	input wire EXCLK,
 	input  wire button,
 	output wire Tx,
 	input  wire Rx
@@ -17,7 +17,8 @@ module cpu(
 	reg RST_delay;
 	
 	wire CLK;
-	clk_wiz_0 clk(.clk_out1(CLK), .reset(1'b0), .clk_in1(EXCLK));
+	
+	assign CLK = EXCLK;
 	
 	always @(posedge CLK or posedge button) begin
 		if(button) begin

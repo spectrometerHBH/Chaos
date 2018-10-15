@@ -1,0 +1,1 @@
+./cpu-judge --com-port /dev/ttyUSB1 --memory /home/spectrometer/CPU-RISCV/data/wzh_test/arith.bin
