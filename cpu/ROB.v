@@ -10,12 +10,15 @@ module ROB(
     input wire [`robWidth - 1 : 0] instToInsert,
     input wire [`tagWidth - 1 : 0] tagCheck1,
     input wire [`tagWidth - 1 : 0] tagCheck2,
+    input wire [`tagWidth - 1 : 0] tagCheckd,
     //output to Decoder
-    output wire [`tagWidth - 1  : 0] tailptr,
+    output wire [`tagWidth - 2  : 0] tailptr,
     output reg  tag1Ready,
     output reg  tag2Ready,
+    output reg  tagdReady,
     output reg  [`dataWidth - 1 : 0] data1,
     output reg  [`dataWidth - 1 : 0] data2,
+    output reg  [`dataWidth - 1 : 0] datad,
     //input from ALUCDB
     input wire ALU_ROB_valid,
     input wire [`tagWidth  - 1 : 0] ALU_CDB_tag,
@@ -42,7 +45,7 @@ module ROB(
 );
     //{Complete, Ready, Data, Addr, Op}
     reg  [`robWidth - 1 : 0] rob[`ROBsize - 1 : 0];
-    reg  [`tagWidth - 1 : 0] frontPointer, tailPointer;
+    reg  [`tagWidth - 2 : 0] frontPointer, tailPointer;
     reg  [`tagWidth - 1 : 0] counter;
     wire [`robWidth - 1 : 0] head;
     wire [`tagWidth - 2 : 0] ALU_CDB_robNumber, branch_CDB_robNumber, LSBuf_CDB_robNumber;
@@ -94,6 +97,16 @@ module ROB(
                 tag2Ready = rob[tagCheck2][`robReadyRange];
                 data2 = rob[tagCheck2][`robDataRange];
             end*/
+        endcase
+        case (tagCheckd)
+            `tagFree : begin
+                tagdReady = 1;
+                datad = {(`dataWidth - 1){1'b0}};
+            end
+            ALU_CDB_tag : begin
+                tagdReady = 1;
+                datad = ALU_CDB_data;
+            end
         endcase
     end
 

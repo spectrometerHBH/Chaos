@@ -92,19 +92,25 @@ module cpu_core(
 	wire [`aluWidth - 1 : 0] ID_ALU_data;
 	wire ID_ROB_tag1_ready;
 	wire ID_ROB_tag2_ready;
-	wire [`tagWidth  - 1 : 0] ID_ROB_robtail;
+	wire ID_ROB_tagd_ready;
+	wire [`tagWidth  - 2 : 0] ID_ROB_robtail;
 	wire [`dataWidth - 1 : 0] ID_ROB_data1;
 	wire [`dataWidth - 1 : 0] ID_ROB_data2;
+	wire [`dataWidth - 1 : 0] ID_ROB_datad;
 	wire ID_ROB_enable;
 	wire [`robWidth  - 1 : 0] ID_ROB_data;
 	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheck1;
 	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheck2;
+	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheckd;
 	wire [`tagWidth  - 1 : 0] ID_reg_tag1; 
 	wire [`tagWidth  - 1 : 0] ID_reg_tag2;
+	wire [`tagWidth  - 1 : 0] ID_reg_tagd;
 	wire [`dataWidth - 1 : 0] ID_reg_data1;
 	wire [`dataWidth - 1 : 0] ID_reg_data2;
+	wire [`dataWidth - 1 : 0] ID_reg_datad;
 	wire [`regWidth  - 1 : 0] ID_reg_addr1;
 	wire [`regWidth  - 1 : 0] ID_reg_addr2;
+	wire [`regWidth  - 1 : 0] ID_reg_addrd;
 	wire ID_reg_enable;
 	wire [`regWidth  - 1 : 0] ID_reg_tagaddr;
 	wire [`tagWidth  - 1 : 0] ID_reg_tag;
@@ -117,19 +123,25 @@ module cpu_core(
 		ID_ALU_data,
 		ID_ROB_tag1_ready,
 		ID_ROB_tag2_ready,
+		ID_ROB_tagd_ready,
 		ID_ROB_robtail,
 		ID_ROB_data1,
 		ID_ROB_data2,
+		ID_ROB_datad,
 		ID_ROB_enable,
 		ID_ROB_data,
 		ID_ROB_tagcheck1,
 		ID_ROB_tagcheck2,
+		ID_ROB_tagcheckd,
 		ID_reg_tag1,
 		ID_reg_tag2,
+		ID_reg_tagd,
 		ID_reg_data1,
 		ID_reg_data2,
+		ID_reg_datad,
 		ID_reg_addr1,
 		ID_reg_addr2,
+		ID_reg_addrd,
 		ID_reg_enable,
 		ID_reg_tagaddr,
 		ID_reg_tag
@@ -186,11 +198,14 @@ module cpu_core(
 		ID_ROB_data,
 		ID_ROB_tagcheck1,
 		ID_ROB_tagcheck2,
+		ID_ROB_tagcheckd,
 		ID_ROB_robtail,
 		ID_ROB_tag1_ready,
 		ID_ROB_tag2_ready,
+		ID_ROB_tagd_ready,
 		ID_ROB_data1,
 		ID_ROB_data2,
+		ID_ROB_datad,
 		ALUCDB_ROB_valid,
 		ALUCDB_ROB_tag,
 		ALUCDB_ROB_data,
@@ -215,6 +230,9 @@ module cpu_core(
 		ID_reg_data1,
 		ID_reg_addr2,
 		ID_reg_tag2,
-		ID_reg_data2
+		ID_reg_data2,
+		ID_reg_addrd,
+		ID_reg_tagd,
+		ID_reg_datad
 	);
 endmodule

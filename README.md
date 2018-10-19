@@ -5,55 +5,59 @@ ACM Class CPU project
 ## RISCV32I Instruction Set 
 
 0 - unsupported
+
 1 - waiting for test
-2 - complete
+
+2 - pass simulation
+
+3 - complete
 
 ### Integer Computational Insturctions
 1. **Integer R-I Instructions**   
 
-    [1] ADDI  
+    [2] ADDI  
 
-    [1] SLTI	(set less than imm)  
+    [2] SLTI	(set less than imm)  
 
-    [1] SLTIU  
+    [2] SLTIU  
 
-    [1] XORI  
+    [2] XORI  
 
-    [1] ORI  
+    [2] ORI  
 
-    [1] ANDI  
+    [2] ANDI  
 
-    [1] SLLI	(logical left shift)  
+    [2] SLLI	(logical left shift)  
 
-    [1] SRLI	(logical right shift)  
+    [2] SRLI	(logical right shift)  
 
-    [1] SRAI	(arthmetic right shift)  
+    [2] SRAI	(arthmetic right shift)  
 
-    [0] LUI	    (load upper imm)  
+    [2] LUI	    (load upper imm)  
 
     [0] AUIPC	(add  upper imm to PC)
 
 2. **Integer R-R Instructions**  
 
-    [1] ADD  
+    [2] ADD  
 
-    [1] SUB  
+    [2] SUB  
 
-    [1] SLT()  
+    [2] SLT  
 
-    [1] SLTU  
+    [2] SLTU  
 
-    [1] XOR  
+    [2] XOR  
 
-    [1] SLL	(logical left shift)  
+    [2] SLL	(logical left shift)  
 
-    [1] SRL      (logical right shift)  
+    [2] SRL      (logical right shift)  
 
-    [1] SRA	(arthmetic right shift)  
+    [2] SRA	(arthmetic right shift)  
 
-    [1] OR  
+    [2] OR  
 
-    [1] AND
+    [2] AND
 
 3. **Nop Instructions**
 

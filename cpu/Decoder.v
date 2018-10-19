@@ -11,36 +11,39 @@ module Decoder(
     //output to ALU
     output reg aluEnable,
     output reg [`aluWidth - 1 : 0] aluData,
-
     /*
     //output to branchALU
     output reg branchALUEnable,
     output reg [`branchALUWidth - 1 : 0] branchALUData,
     */
-
     //input from ROB
     input wire tag1Ready,
     input wire tag2Ready,
-    input wire [`tagWidth  - 1 : 0] ROBtail,
+    input wire tagdReady,
+    input wire [`tagWidth  - 2 : 0] ROBtail,
     input wire [`dataWidth - 1 : 0] robData1,
     input wire [`dataWidth - 1 : 0] robData2,
+    input wire [`dataWidth - 1 : 0] robDatad,
     //output to ROB
     output reg robEnable,
     output reg [`robWidth - 1 : 0] robData,
     output wire [`tagWidth - 1 : 0] tagCheck1,
     output wire [`tagWidth - 1 : 0] tagCheck2,
+    output wire [`tagWidth - 1 : 0] tagCheckd,
     //input from Regfile
     input wire [`tagWidth - 1 : 0] regTag1,
     input wire [`tagWidth - 1 : 0] regTag2,
+    input wire [`tagWidth - 1 : 0] regTagd,
     input wire [`dataWidth - 1 : 0] regData1,
     input wire [`dataWidth - 1 : 0] regData2,
+    input wire [`dataWidth - 1 : 0] regDatad,
     //output to Regfile
     output wire [`regWidth - 1 : 0] regAddr1,
     output wire [`regWidth - 1 : 0] regAddr2,
+    output wire [`regWidth - 1 : 0] regAddrd,
     output reg regEnable,
     output reg [`regWidth - 1 : 0] regTagAddr,
     output reg [`tagWidth - 1 : 0] regTag
-
     /*,
     //input from branchPredictor
     input wire predictionFromPredictor,
@@ -52,8 +55,8 @@ module Decoder(
     wire [`classOp3Width - 1 : 0] classop3;
     wire [`RIImmWidth    - 1 : 0] Imm;
     wire [`regWidth      - 1 : 0] rd, rs1, rs2;
-    wire [`dataWidth     - 1 : 0] data1, data2;
-    wire [`tagWidth      - 1 : 0] tag1,  tag2;
+    wire [`dataWidth     - 1 : 0] data1, data2, datad;
+    wire [`tagWidth      - 1 : 0] tag1,  tag2,  tagd;
     reg prediction;
     reg  [`newopWidth    - 1 : 0] newop;
 
@@ -68,12 +71,17 @@ module Decoder(
     assign Imm = instToDecode[`ImmRange];
     assign regAddr1 = rs1;
     assign regAddr2 = rs2;
+    assign regAddrd = rd;
     assign tagCheck1 = regTag1;
     assign tagCheck2 = regTag2;
+    assign tagCheckd = regTagd;
     assign tag1  = (regTag1 == `tagFree || tag1Ready) ? `tagFree : regTag1;
     assign data1 = (regTag1 == `tagFree) ? regData1 : robData1;
     assign tag2  = (regTag2 == `tagFree || tag2Ready) ? `tagFree : regTag2;
-    assign data2 = (regTag2 == `tagFree) ? regData2 : robData2; 
+    assign data2 = (regTag2 == `tagFree) ? regData2 : robData2;
+    assign tagd  = (regTagd == `tagFree || tagdReady) ? `tagFree : regTagd;
+    assign datad = (regTagd == `tagFree) ? regDatad : robDatad;
+
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
             newop = `NOP;
@@ -144,6 +152,10 @@ module Decoder(
             endcase
         end
     end
+
+    // LUI
+    wire [`UImmWidth - 1 : 0] UImm;
+    assign UImm = instToDecode[`UImmRange];
     /*
     
     //branchALU & JAL & JALR
@@ -185,7 +197,7 @@ module Decoder(
                         2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
                     };
                     regTagAddr = rd;
-                    regTag = ROBtail;
+                    regTag = {1'b0, ROBtail};
                 end
                 `classRR : begin
                     aluEnable = 1;
@@ -198,7 +210,20 @@ module Decoder(
                         2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
                     };
                     regTagAddr = rd;
-                    regTag = ROBtail;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classLUI : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {UImm, {(`dataWidth - `UImmWidth){1'b0}}}, tagd, datad, newop
+                    };
+                    robData = {
+                        2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
+                    };
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
                 end
                 /*
                 `classLoad : begin
@@ -209,9 +234,6 @@ module Decoder(
                 end
                 `classBranch : begin
                   
-                end
-                `classLUI : begin
-
                 end
                 `classAUIPC : begin
                   

@@ -21,7 +21,11 @@ module Regfile(
     //Read Port2
     input wire [`regWidth - 1 : 0] name2,
     output reg [`tagWidth  - 1 : 0] tag2,
-    output reg [`dataWidth - 1 : 0] data2
+    output reg [`dataWidth - 1 : 0] data2,
+    //Read Port3
+    input wire [`regWidth - 1 : 0] name3,
+    output reg [`tagWidth  - 1 : 0] tag3,
+    output reg [`dataWidth - 1 : 0] data3
 );
     reg [`dataWidth - 1 : 0] data[`regCnt - 1 : 0];
     reg [`tagWidth  - 1 : 0] tag[`regCnt  - 1 : 0];
@@ -72,5 +76,18 @@ module Regfile(
 			data2 = data[name2];
 			tag2  = tag [name2];
 		end
+    end
+
+    always @(*) begin
+    	if (rst) begin
+    		data3 <= 0;
+    		tag3  <= `tagFree;
+    	end else if (enWrite && name3 == namew) begin
+ 			data3 = dataw;
+ 			tag3  = tagw;   		
+    	end else begin
+    		data3 = data[name3];
+    		tag3  = tag [name3];
+    	end
     end
 endmodule 

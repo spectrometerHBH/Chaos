@@ -10,6 +10,7 @@
 `define addrWidth          32
 `define regWidth           5 
 `define RIImmWidth         12
+`define UImmWidth          20
 `define newopWidth         5 
 `define robPointerWidth    3
 `define robOpWidith        3
@@ -34,23 +35,24 @@
 `define rs1Range        19 : 15   
 `define rs2Range        24 : 20
 `define ImmRange        31 : 20
+`define UImmRange       31 : 12
 
-`define aluWidth          81
+`define aluWidth          80
 `define aluOpRange        4  : 0
 `define aluData1Range     36 : 5
 `define aluTag1Range      40 : 37
 `define aluData2Range     72 : 41
 `define aluData2Low5Range 45 : 41 
 `define aluTag2Range      76 : 73
-`define aluDestRange      80 : 77
+`define aluDestRange      79 : 77
 
-`define branchALUWidth      81
+`define branchALUWidth      80
 `define branchALUOpRange    4  : 0
 `define branchALUData1Range 36 : 5
 `define branchALUTag1Range  40 : 37
 `define branchALUData2Range 72 : 41
 `define branchALUTag2Range  76 : 73
-`define branchALUDestRange  80 : 77
+`define branchALUDestRange  79 : 77
 
 `define robWidth         69   
 `define robOpRange       2  : 0 
