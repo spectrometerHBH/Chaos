@@ -1,4 +1,5 @@
 //Written by Zhekai Zhang
+//Modified by Bohan Hou
 `timescale 1ns / 1ps
 
 module sim_memory(
@@ -14,7 +15,7 @@ module sim_memory(
 	wire [7:0] recv_data;
 	
 	wire recvable, sendable;
-	uart_comm #(.BAUDRATE(5000000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
+	uart #(.BAUDRATE(100000000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
 	
 	reg read_flag;
 	wire [4:0] read_data_length;
@@ -36,7 +37,7 @@ module sim_memory(
 			memory[i] = 0;
 			memory_stack[i] = 0;
 		end
-		$readmemh("D:\\Project\\Vivado\\mips_cpu\\testcase\\mips.data", memory);
+		$readmemh("/home/spectrometer/Chaos/data/sample.data", memory);
 	end
 	
 	function [31:0] getDWORD;
@@ -49,7 +50,7 @@ module sim_memory(
 		getWORD = {memory[addr+1], memory[addr]};
 	endfunction
 	
-	multchan_comm #(.CHANNEL_BIT(1), .MESSAGE_BIT(72)) comm(
+	multichannel #(.CHANNEL_BIT(1), .MESSAGE_BIT(72)) comm(
 		CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable,
 		{1'b0, read_flag}, {read_data_length, read_data},
 		{1'b0, write_flag}, {write_data_length, write_data},

@@ -11,11 +11,11 @@ module ROB(
     input wire [`tagWidth - 1 : 0] tagCheck1,
     input wire [`tagWidth - 1 : 0] tagCheck2,
     //output to Decoder
-    output wire tailptr,
-    output reg tag1Ready,
-    output reg tag2Ready,
-    output reg [`dataWidth - 1 : 0] data1,
-    output reg [`dataWidth - 1 : 0] data2,
+    output wire [`tagWidth - 1  : 0] tailptr,
+    output reg  tag1Ready,
+    output reg  tag2Ready,
+    output reg  [`dataWidth - 1 : 0] data1,
+    output reg  [`dataWidth - 1 : 0] data2,
     //input from ALUCDB
     input wire ALU_ROB_valid,
     input wire [`tagWidth  - 1 : 0] ALU_CDB_tag,
@@ -47,7 +47,6 @@ module ROB(
     wire [`robWidth - 1 : 0] head;
     wire [`tagWidth - 2 : 0] ALU_CDB_robNumber, branch_CDB_robNumber, LSBuf_CDB_robNumber;
     wire headFinish, headReady;
-    reg  regEnable;
 
     assign head                 = rob[frontPointer];
     assign headFinish           = (counter != 0 && rob[frontPointer][`robCompleteRange]) ? 1 : 0;
@@ -114,7 +113,7 @@ module ROB(
     end
 
     integer i;
-    always @ (posedge clk) begin
+    always @ (posedge clk or posedge rst) begin
         if (rst) begin
             frontPointer <= 1'b0;
             tailPointer  <= 1'b0;
@@ -141,11 +140,11 @@ module ROB(
 
     //Execute front
     always @ (*) begin
-        regEnable <= 0;
+        regfileEnable <= 0;
         if (counter && headReady) begin
             case (head[`robOpRange])
                 `robClassNormal: begin
-                    regEnable <= 1;
+                    regfileEnable <= 1;
                     rob_reg_name <= head[`robRegRange];
                     rob_reg_data <= head[`robDataRange];
                     rob_reg_tag  <= frontPointer;  

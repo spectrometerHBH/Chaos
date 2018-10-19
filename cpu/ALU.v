@@ -39,32 +39,34 @@ module ALU(
     assign ready = readyState & (-readyState);
     assign free  = empty != 0 ? 1 : 0;
 
-    integer i;
+    integer k;
     //Supervise free and ready situation
     always @ (*) begin
-        for (i = 0; i < `aluRSsize; i = i + 1) begin
-            freeState[i] = (RS[i][`aluOpRange] == `NOP) ? 0 : 1;  
-            readyState[i] = (RS[i][`aluOpRange] != `NOP && RS[i][`aluData1Range] == `tagFree && RS[i][`aluData2Range] == `tagFree) ? 1 : 0;
+        for (k = 0; k < `aluRSsize; k = k + 1) begin
+            freeState[k] = (RS[k][`aluOpRange] == `NOP) ? 1 : 0;  
+            readyState[k] = (RS[k][`aluOpRange] != `NOP && RS[k][`aluTag1Range] == `tagFree && RS[k][`aluTag2Range] == `tagFree) ? 1 : 0;
         end      
     end
 
     //Pull update from CDB
+    integer j;
     always @ (negedge clk) begin
         if (rst) begin
-            for (i = 0; i < `aluRSsize; i = i + 1) begin
-                RS[i] <= `aluWidth'b0;
+            for (j = 0; j < `aluRSsize; j = j + 1) begin
+                RS[j] <= `aluWidth'b0;
             end  
         end else begin
             if (aluFinish) begin
+                aluSignal <= `INVALID;
                 RS[ALU_CDB_RSnum] <= {(`aluWidth){1'b0}};
-                for (i = 0; i < `aluRSsize; i = i + 1) begin
-                    if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == ALU_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
-                        RS[i][`aluData1Range] <= ALU_CDB_data;
-                        RS[i][`aluTag1Range]  <= `tagFree;  
+                for (j = 0; j < `aluRSsize; j = j + 1) begin
+                    if (RS[j][`aluOpRange] != `NOP && RS[j][`aluTag1Range] == ALU_CDB_tag && RS[j][`aluTag1Range] != `tagFree) begin
+                        RS[j][`aluData1Range] <= ALU_CDB_data;
+                        RS[j][`aluTag1Range]  <= `tagFree;  
                     end
-                    if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag2Range] == ALU_CDB_tag && RS[i][`aluTag2Range] != `tagFree) begin
-                        RS[i][`aluData2Range] <= ALU_CDB_data;
-                        RS[i][`aluTag2Range]  <= `tagFree;
+                    if (RS[j][`aluOpRange] != `NOP && RS[j][`aluTag2Range] == ALU_CDB_tag && RS[j][`aluTag2Range] != `tagFree) begin
+                        RS[j][`aluData2Range] <= ALU_CDB_data;
+                        RS[j][`aluTag2Range]  <= `tagFree;
                     end
                 end
             end
@@ -85,46 +87,42 @@ module ALU(
         end
     end
 
+    integer i, l;
     always @ (posedge clk) begin
         if (rst) begin
             aluSignal <= `INVALID;
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
-            for (i = 0; i < `aluRSsize; i = i + 1) begin
-                RS[i] <= `aluWidth'b0;
+            for (l = 0; l < `aluRSsize; l = l + 1) begin
+                RS[l] <= `aluWidth'b0;
             end  
         end else begin
             if (aluEnable & empty) begin
-                for (i = 0; i < `aluRSsize; i = i + 1) begin
-                    if (empty == ((1'b1) << `aluRSsize) >> (`aluRSsize - i - 1)) begin
-                        RS[i] <= inst;
-                    end 
-                end
+                RS[`CLOG2(empty)] <= inst;
             end
             aluSignal <= `INVALID;
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
-            for (i = 0; i < `aluRSsize; i = i + 1) begin
-                if (ready == ((1'b1) << `aluRSsize) >> (`aluRSsize - i - 1)) begin
-                    aluSignal <= `VALID;
-                    ALU_CDB_out_tag <= RS[i][`aluDestRange];
-                    ALU_CDB_out_RSnum <= i;
-                    case (RS[i][`aluOpRange])
-                        `ADD  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) +   $signed(RS[i][`aluData2Range]);
-                        `SUB  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) -   $signed(RS[i][`aluData2Range]);    
-                        `SLL  : ALU_CDB_out_data <= RS[i][`aluData1Range]          <<  (RS[i][`aluData2Low5Range]);     
-                        `SLT  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) <   $signed(RS[i][`aluData2Range]) ? 1 : 0;    
-                        `SLTU : ALU_CDB_out_data <= RS[i][`aluData1Range]          <   RS[i][`aluData2Range]          ? 1 : 0;     
-                        `XOR  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) ^   $signed(RS[i][`aluData2Range]);  
-                        `SRL  : ALU_CDB_out_data <= RS[i][`aluData1Range]          >>  (RS[i][`aluData2Low5Range]); 
-                        `SRA  : ALU_CDB_out_data <= RS[i][`aluData1Range]          >>> (RS[i][`aluData2Low5Range]);
-                        `OR   : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) |   $signed(RS[i][`aluData2Range]); 
-                        `AND  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) &   $signed(RS[i][`aluData2Range]);
-                        default : ;
-                    endcase
-                end
+            if (ready) begin
+                i = `CLOG2(ready);
+                aluSignal <= `VALID;
+                ALU_CDB_out_tag <= RS[i][`aluDestRange];
+                ALU_CDB_out_RSnum <= i;
+                case (RS[i][`aluOpRange])
+                    `ADD  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) +   $signed(RS[i][`aluData2Range]);
+                    `SUB  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) -   $signed(RS[i][`aluData2Range]);    
+                    `SLL  : ALU_CDB_out_data <= RS[i][`aluData1Range]          <<  (RS[i][`aluData2Low5Range]);     
+                    `SLT  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) <   $signed(RS[i][`aluData2Range]) ? 1 : 0;    
+                    `SLTU : ALU_CDB_out_data <= RS[i][`aluData1Range]          <   RS[i][`aluData2Range]          ? 1 : 0;     
+                    `XOR  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) ^   $signed(RS[i][`aluData2Range]);  
+                    `SRL  : ALU_CDB_out_data <= RS[i][`aluData1Range]          >>  (RS[i][`aluData2Low5Range]); 
+                    `SRA  : ALU_CDB_out_data <= RS[i][`aluData1Range]          >>> (RS[i][`aluData2Low5Range]);
+                    `OR   : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) |   $signed(RS[i][`aluData2Range]); 
+                    `AND  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) &   $signed(RS[i][`aluData2Range]);
+                    default : ;
+                endcase
             end
         end
     end

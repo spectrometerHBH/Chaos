@@ -13,7 +13,7 @@ module sim_cpu();
 		CLK = 0;
 		RST = 0;
 		RST = #1 1;
-		repeat(1000) #1 CLK = !CLK;
+		repeat(50) #1 CLK = !CLK;
 		RST = 0;
 		forever #1 CLK = !CLK;
 	end

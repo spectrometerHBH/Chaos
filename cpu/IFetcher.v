@@ -38,7 +38,7 @@ module IFetcher(
 				stall_req = 0;
 			end else if (ICache_busy) begin
 				//busy = 1 done = 0
-				rw_flag   = 0;
+				//rw_flag   = 0;
 				stall_req = 1;
 			end else if (!ICache_busy) begin
 				//busy = 0 done = 0

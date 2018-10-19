@@ -92,7 +92,7 @@ module cpu_core(
 	wire [`aluWidth - 1 : 0] ID_ALU_data;
 	wire ID_ROB_tag1_ready;
 	wire ID_ROB_tag2_ready;
-	wire ID_ROB_robtail;
+	wire [`tagWidth  - 1 : 0] ID_ROB_robtail;
 	wire [`dataWidth - 1 : 0] ID_ROB_data1;
 	wire [`dataWidth - 1 : 0] ID_ROB_data2;
 	wire ID_ROB_enable;

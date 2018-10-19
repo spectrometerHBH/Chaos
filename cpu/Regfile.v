@@ -27,7 +27,7 @@ module Regfile(
     reg [`tagWidth  - 1 : 0] tag[`regCnt  - 1 : 0];
 
     integer i;
-	always @ (posedge clk) begin
+	always @ (posedge clk or posedge rst) begin
 		if (rst) begin
 			data[0] <= 0;
 			for (i = 0; i < `regCnt; i = i + 1) begin

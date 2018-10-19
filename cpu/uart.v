@@ -1,9 +1,10 @@
 // Written by Zhekai Zhang
+// Modifed by Bohan Hou
 `timescale 1ns / 1ps
 
 module uart
 	#(
-	parameter BAUDRATE = 9600,
+	parameter BAUDRATE = 100000000,
 	parameter CLOCKRATE = 100000000
 	)(
 	input CLK,
@@ -70,12 +71,15 @@ module uart
 			end
 			if(recv_status == STATUS_IDLE) begin
 				if(!Rx) begin
-					recv_status <= STATUS_BEGIN;
+					recv_status <= STATUS_DATA;
 					recv_counter <= 0;
+					recv_bit <= 0;
+					recv_parity <= 0;
 					recv_clock <= 1;
 				end
 			end else if(sample) begin
 				case(recv_status)
+				/*
 				STATUS_BEGIN:begin
 					if(!Rx) begin
 						recv_status <= STATUS_DATA;
@@ -86,7 +90,7 @@ module uart
 						recv_clock <= 0;
 					end
 				end
-
+				*/
 				STATUS_DATA:begin
 					recv_parity <= recv_parity ^ Rx;
 					recv_write_data[recv_bit] <= Rx;
