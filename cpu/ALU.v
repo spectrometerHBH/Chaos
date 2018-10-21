@@ -122,6 +122,7 @@ module ALU(
                     `OR   : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) |   $signed(RS[i][`aluData2Range]); 
                     `AND  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) &   $signed(RS[i][`aluData2Range]);
                     `LUI  : ALU_CDB_out_data <= RS[i][`aluData2Range];
+                    `JAL  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) +   $signed(RS[i][`aluData2Range]);
                     default : ;
                 endcase
             end

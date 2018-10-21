@@ -18,12 +18,11 @@ module ALU_CDB(
     //output to ROB
     output reg valid_ROB,
     output wire [`tagWidth   - 1 : 0] robTagOut,
-    output wire [`dataWidth  - 1 : 0] robDataOut
-    /*
+    output wire [`dataWidth  - 1 : 0] robDataOut,
     //output to BranchALU
     output wire valid_branch,
     output wire [`tagWidth   - 1 : 0] branchALUTagOut,
-    output wire [`dataWidth  - 1 : 0] branchALUDataOut, 
+    output wire [`dataWidth  - 1 : 0] branchALUDataOut/*, 
     //output to LSBuffer
     output wire valid_LSBuf,
     output wire [`tagWidth   - 1 : 0] LSBufferTagOut,
@@ -35,12 +34,12 @@ module ALU_CDB(
 
     assign aluTagOut       = tagInfo;
     assign robTagOut       = tagInfo;
-    //assign branchALUTagOut = tagInfo;
+    assign branchALUTagOut = tagInfo;
     //assign LSBufferTagOut  = tagInfo;
 
     assign aluDataOut       = dataInfo;
     assign robDataOut       = dataInfo;
-    //assign branchALUDataOut = dataInfo;
+    assign branchALUDataOut = dataInfo;
     //assign LSBufferDataOut  = dataInfo;
 
     always @(posedge clk or posedge rst) begin
