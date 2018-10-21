@@ -17,11 +17,14 @@ private:
 	static const int inst_width  = 72;
 	std :: bitset<inst_width> inst;
 	size_t recv_packet_id, recv_bit, recv_length, send_packet_id = 0;
+	uint8_t recv_counter = 0;
 	void feedback();
 	void send(uint32_t data);
 	
 public:
-	Adapter() : env(nullptr) {}
+	Adapter() : env(nullptr) {
+		recv_status = STATUS_IDLE;
+	}
 
 	void setEnvironment(IEnvironment *env) { this->env = env; }
 

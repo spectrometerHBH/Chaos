@@ -37,7 +37,7 @@ module cpu(
 	wire		UART_sendable;
 	wire		UART_receivable;
 	
-	uart #(.BAUDRATE(100000000), .CLOCKRATE(100000000)) UART(
+	uart #(.BAUDRATE(25000000), .CLOCKRATE(100000000)) UART(
 		CLK, RST,
 		UART_send_flag, UART_send_data,
 		UART_recv_flag, UART_recv_data,

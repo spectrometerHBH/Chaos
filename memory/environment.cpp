@@ -1,6 +1,7 @@
 #include "environment.h"
 #include "simulator.h"
 #include <fstream>
+#include <cstdio>
 #include <boost/format.hpp>
 
 using boost::format;
@@ -38,6 +39,7 @@ int Environment::Run(const std::string &memFilePath, std::istream &in, std::ostr
 		char c;
 		fin.read(&c, 1);
 		memory.at(pos) = std::uint8_t(c);
+		printf("%u\n", memory.at(pos));
 		pos++;
 	}
 
@@ -71,6 +73,7 @@ int Environment::Run(const std::string &memFilePath, std::istream &in, std::ostr
 			while (is_running)
 			{
 				std::uint8_t data;
+				while (!serPort.available());
 				serPort.read(&data, 1);
 				adapter.onRecv(data);
 			}

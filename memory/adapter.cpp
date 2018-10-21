@@ -1,5 +1,6 @@
 #include "adapter.h"
 #include <iostream>
+#include <cstdio>
 #include <vector>
 #include <bitset>
 // TODO: Do something when you receive a byte from your CPU
@@ -28,21 +29,27 @@ void Adapter :: feedback(){
     //  data
 	std :: vector<uint8_t> bytes;
 	bytes.clear();
+    for (int i = recv_bit - 1; i >= 0; i--) std :: cout << inst[i] << " ";
+    std :: cout << std :: endl;
 	for (int i = 0; i < recv_bit; i += 8){
 		uint8_t byte = 0;
-		for (int j = i; j < i + 8; j++)
+		for (int j = i + 7; j >= i; j--)
 			byte = (byte << 1) | inst[j];
 		bytes.push_back(byte);
 	}
-
+    for (int i = bytes.size() - 1; i >= 0; i--)
+        printf("%x ", bytes[i]);
+    std :: cout << std :: endl;
 	if (bytes.size() == 5 && bytes[4] == 0){
 		uint32_t addr = (bytes[0]) | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
 		uint32_t data = env->ReadMemory(addr);
+        std :: cout << "Read request : " << std :: hex << addr << " " << data << std :: endl;
 		send(data);
 	}else if (bytes.size() == 9){
 		uint32_t data = (bytes[0]) | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[3] << 24);
 		uint32_t addr = (bytes[4]) | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24);
-		env->WriteMemory(addr, data, bytes[8] & (0x0f));
+		std :: cout << "Write request : " << std :: hex << addr << " " << data << std :: endl;
+        env->WriteMemory(addr, data, bytes[8] & (0x0f));
 	}
 }
 
@@ -83,6 +90,8 @@ void Adapter :: onRecv(std::uint8_t data){
 	{111, packet_id}
     */
 
+    //std :: cout << 1 << " " << data << std :: endl;
+    printf("%d %x\n", recv_status, data);
     uint8_t op = data >> 5;
 
     switch (recv_status) {
@@ -117,8 +126,9 @@ void Adapter :: onRecv(std::uint8_t data){
     	case STATUS_DATA : {
     		std :: bitset<8> data_array(data);
     		if (data_array[7] == 0){
-    			for (int i = 0; i < 7 && recv_bit < recv_length; i++)
+    			for (int i = 0; i < 7 && recv_bit < recv_length; i++){
     				inst[recv_bit++] = data_array[i];
+                }
     			if (recv_bit == recv_length)
     				recv_status = STATUS_END;
     		}else{

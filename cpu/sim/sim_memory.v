@@ -15,7 +15,7 @@ module sim_memory(
 	wire [7:0] recv_data;
 	
 	wire recvable, sendable;
-	uart #(.BAUDRATE(100000000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
+	uart #(.BAUDRATE(25000000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
 	
 	reg read_flag;
 	wire [4:0] read_data_length;
