@@ -10,6 +10,7 @@ module ALU(
     //input from Decoder
     input wire aluEnable, 
     input wire [`aluWidth   - 1 : 0] inst,  
+    input wire [`addrWidth  - 1 : 0] inst_pc,
     /*
     //input from LSBufCDB
     input wire LSBuf_CDB_valid,
@@ -25,7 +26,9 @@ module ALU(
     output reg aluSignal,
     output reg [`aluRSWidth - 1 : 0] ALU_CDB_out_RSnum, 
     output reg [`tagWidth   - 1 : 0] ALU_CDB_out_tag,
-    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data
+    output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data,
+    output reg [`addrWidth  - 1 : 0] ALU_CDB_out_offset,
+    output reg                       ALU_CDB_PC_valid
     //input from ROB
     //input wire mispredictionRst
 );
@@ -94,6 +97,8 @@ module ALU(
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
+            ALU_CDB_out_offset <= 0;
+            ALU_CDB_PC_valid <= 0;
             for (l = 0; l < `aluRSsize; l = l + 1) begin
                 RS[l] <= `aluWidth'b0;
             end  
@@ -105,6 +110,8 @@ module ALU(
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
+            ALU_CDB_out_offset <= 0;
+            ALU_CDB_PC_valid <= 0;
             if (ready) begin
                 i = `CLOG2(ready);
                 aluSignal <= `VALID;
@@ -122,7 +129,16 @@ module ALU(
                     `OR   : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) |   $signed(RS[i][`aluData2Range]); 
                     `AND  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) &   $signed(RS[i][`aluData2Range]);
                     `LUI  : ALU_CDB_out_data <= RS[i][`aluData2Range];
-                    `JAL  : ALU_CDB_out_data <= $signed(RS[i][`aluData1Range]) +   $signed(RS[i][`aluData2Range]);
+                    `JAL  : begin 
+                        ALU_CDB_out_offset <= $signed(RS[i][`aluData1Range]) + $signed(RS[i][`aluData2Range]);
+                        ALU_CDB_out_data   <= $signed(RS[i][`aluData2Range]) + 4;
+                        ALU_CDB_PC_valid   <= 1;
+                    end
+                    `JALR : begin
+                        ALU_CDB_out_offset <= ($signed(RS[i][`aluData1Range]) + $signed(RS[i][`aluData2Range])) & 32'hfffffffe;
+                        ALU_CDB_out_data   <= inst_pc + 4;
+                        ALU_CDB_PC_valid   <= 1;
+                    end
                     default : ;
                 endcase
             end

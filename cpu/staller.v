@@ -7,13 +7,11 @@ module staller(
 	input wire rst,
 	//IFetcher stall,
 	input  wire IFetch_stall,
-	output wire PC_stall,
 	output wire IFID_stall,
 	//branch   stall
 	input  wire Decoder_branch_stall,
 	input  wire branchALU_complete
 );
-	assign PC_stall    = IFetch_stall || branch_stalling;
 	assign IFID_stall  = IFetch_stall || branch_stalling;
 	
 	reg branch_stalling;

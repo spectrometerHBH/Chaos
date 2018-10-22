@@ -47,7 +47,9 @@ module Regfile(
 				end
 			end
 			if (enDecoderw) begin
-				tag[regDecoderw] <= tagDecoderw;
+				if (regDecoderw) begin
+					tag[regDecoderw] <= tagDecoderw;
+				end
 			end
 		end
 	end

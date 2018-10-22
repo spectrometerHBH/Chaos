@@ -10,8 +10,9 @@ module Decoder(
     input wire [`instWidth - 1 : 0] instToDecode,
     input wire [`addrWidth - 1 : 0] inst_PC,
     //output to ALU
-    output reg aluEnable,
-    output reg [`aluWidth - 1 : 0] aluData,
+    output reg  aluEnable,
+    output reg  [`aluWidth - 1 : 0] aluData,
+    output wire [`addrWidth - 1 : 0] inst_PC_out,
     //output to branchALU
     output reg branchALUEnable,
     output reg [`branchALUWidth - 1 : 0] branchALUData,
@@ -42,12 +43,7 @@ module Decoder(
     output wire [`regWidth - 1 : 0] regAddrd,
     output reg regEnable,
     output reg [`regWidth - 1 : 0] regTagAddr,
-    output reg [`tagWidth - 1 : 0] regTag,
-    //output to PC
-    output reg PC_offset_valid,
-    output reg [`addrWidth - 1 : 0] PC_offset,
-    //output to staller
-    output reg branch_stall
+    output reg [`tagWidth - 1 : 0] regTag
 );
     wire [`classOpWidth  - 1 : 0] classop;
     wire [`classOp2Width - 1 : 0] classop2;
@@ -56,7 +52,6 @@ module Decoder(
     wire [`regWidth      - 1 : 0] rd, rs1, rs2;
     wire [`dataWidth     - 1 : 0] data1, data2, datad;
     wire [`tagWidth      - 1 : 0] tag1,  tag2,  tagd;
-    reg prediction;
     reg  [`newopWidth    - 1 : 0] newop;
 
     //Decode the instruction
@@ -80,12 +75,11 @@ module Decoder(
     assign data2 = (regTag2 == `tagFree) ? regData2 : robData2;
     assign tagd  = (regTagd == `tagFree || tagdReady) ? `tagFree : regTagd;
     assign datad = (regTagd == `tagFree) ? regDatad : robDatad;
+    assign inst_PC_out = inst_PC;
 
     always @ (*) begin
         if (instToDecode == `nopinstr) begin
             newop = `NOP;
-            PC_offset_valid = 0;
-            branch_stall    = 0;
         end else begin
             case (classop)
                 `classRI : begin
@@ -99,8 +93,6 @@ module Decoder(
                         3'b001 : newop = `SLL;
                         3'b101 : newop = classop3 == 7'b0000000 ? `SRL : `SRA;
                     endcase 
-                    PC_offset_valid = 0;   
-                    branch_stall    = 0;             
                 end
                 `classRR : begin
                     case (classop2) 
@@ -113,8 +105,6 @@ module Decoder(
                         3'b110 : newop = `OR;
                         3'b111 : newop = `AND;
                     endcase  
-                    PC_offset_valid = 0;
-                    branch_stall    = 0;                
                 end
                 `classLoad : begin
                     case (classop2)
@@ -124,8 +114,6 @@ module Decoder(
                         3'b100 : newop = `LBU;
                         3'b101 : newop = `LHU;
                     endcase             
-                    PC_offset_valid = 0;
-                    branch_stall    = 0;     
                 end
                 `classSave : begin
                     case (classop2)
@@ -133,8 +121,6 @@ module Decoder(
                         3'b001 : newop = `SH;
                         3'b010 : newop = `SW;
                     endcase             
-                    PC_offset_valid = 0;     
-                    branch_stall    = 0;
                 end
                 `classBranch : begin
                     case (classop2)
@@ -145,28 +131,18 @@ module Decoder(
                         3'b110 : newop = `BLTU;
                         3'b111 : newop = `BGEU;
                     endcase             
-                    PC_offset_valid = 1;     
-                    branch_stall    = 1;
                 end
                 `classLUI : begin
                     newop = `LUI;
-                    PC_offset_valid = 0;
-                    branch_stall    = 0;
                 end
                 `classAUIPC : begin
                     newop = `AUIPC;
-                    PC_offset_valid = 1;
-                    branch_stall    = 1;
                 end
                 `classJAL : begin
                     newop = `JAL;
-                    PC_offset_valid = 1;
-                    branch_stall    = 0;
                 end
                 `classJALR : begin
                     newop = `JALR;
-                    PC_offset_valid = 1;
-                    branch_stall    = 1;
                 end
             endcase
         end
@@ -177,23 +153,12 @@ module Decoder(
     assign UImm = instToDecode[`UImmRange];
 
     // JAL
-    wire [`JImmWidth - 1 : 0] JImm;
-    assign JImm = {instToDecode[31], instToDecode[19:12], instToDecode[20], instToDecode[30:21], 1'b0};
-    
-    always @(*) begin
-        case (classop)
-            `classJAL    : begin
-                PC_offset = {{(`addrWidth - 21){JImm[20]}}, JImm};
-            end
-            default : begin
-                PC_offset = 0;
-            end
-        endcase
-    end
-    
+    wire [`addrWidth - 1 : 0] JImm;
+    assign JImm = {{(`addrWidth - 21){instToDecode[31]}}, instToDecode[19:12], instToDecode[20], instToDecode[30:21], 1'b0};
+
     //branchALU
     wire [`addrWidth - 1 : 0] BImm;
-    assign BImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[8], 1'b0};
+    assign BImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[11:8], 1'b0};
 
     //Write TO FU, ROB and Regfile
     always @ (*) begin
@@ -208,7 +173,7 @@ module Decoder(
                     robEnable = 1;
                     regEnable = 1;
                     aluData = {
-                        ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){1'b0}}, Imm}, tag1, data1, newop
+                        ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
                     };    
                     robData = {
                         2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
@@ -247,10 +212,23 @@ module Decoder(
                     robEnable = 1;
                     regEnable = 1;
                     aluData = {
-                        ROBtail, `tagFree, inst_PC, tagd, datad, newop
+                        ROBtail, `tagFree, inst_PC, `tagFree, JImm, newop
                     };
                     robData = {
                         2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal
+                    };
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classJALR : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
+                    };
+                    robData = {
+                        2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, `robClassNormal    
                     };
                     regTagAddr = rd;
                     regTag = {1'b0, ROBtail};
@@ -270,9 +248,6 @@ module Decoder(
                 end
                 `classAUIPC : begin
                   
-                end
-                `classJALR : begin
-                
                 end*/
                 default : ;
            endcase

@@ -45,9 +45,12 @@ module cpu_core(
 
 	wire [`addrWidth - 1 : 0] PC_IF;
 	wire [`instWidth - 1 : 0] IF_ID_inst;
-	wire IF_stall_req;
+	wire IF_IFID_stall;
+	wire IF_PC_stall;
 	wire alu_IF_free;
 	wire rob_IF_free;
+	wire jump_complete;
+	wire branch_complete;
 	IFetcher IF(
 		clk, rst,
 		PC_IF,
@@ -58,39 +61,29 @@ module cpu_core(
 		ICache_read_data,
 		ICache_busy,
 		ICache_done,
+		IF_IFID_stall,
 		IF_ID_inst,
-		IF_stall_req,
+		IF_PC_stall,
 		alu_IF_free,
-		rob_IF_free
+		rob_IF_free,
+		jump_complete,
+		branch_complete
 	);
 
-	wire PC_stall;
 	wire [`addrWidth - 1 : 0] PC_IFID;
-	wire PC_offset_valid;
-	wire [`addrWidth - 1 : 0] PC_offset;
+	wire jump_dest_valid;
+	wire [`addrWidth - 1 : 0] jump_dest;
 	wire branch_offset_valid;
 	wire [`addrWidth - 1 : 0] branch_offset;
 	PC PC(
 		clk, rst,
-		PC_stall,
+		IF_PC_stall,
 		PC_IF,
 		PC_IFID,
-		PC_offset_valid,
-		PC_offset,
+		jump_dest_valid,
+		jump_dest,
 		branch_offset_valid,
 		branch_offset
-	);
-
-	wire IFID_stall;
-	wire Decoder_branch_stall;
-	wire branchALU_complete;
-	staller staller(
-		clk, rst,
-		IF_stall_req,
-		PC_stall,
-		IFID_stall,
-		Decoder_branch_stall,
-		branchALU_complete
 	);
 
 	wire IF_ID_valid;
@@ -98,7 +91,7 @@ module cpu_core(
 	wire [`addrWidth - 1 : 0] IF_ID_pc_out;
 	IF_ID IF_ID(
 		clk, rst,
-		IFID_stall,
+		IF_IFID_stall,
 		IF_ID_inst,
 		IF_ID_valid,
 		IF_ID_inst_out,
@@ -108,6 +101,7 @@ module cpu_core(
 
 	wire ID_ALU_enable;
 	wire [`aluWidth - 1 : 0] ID_ALU_data;
+	wire [`addrWidth - 1 : 0] ID_ALU_PC;
 	wire ID_branchALU_enable;
 	wire [`branchALUWidth - 1 : 0] ID_branchALU_data;
 	wire ID_ROB_tag1_ready;
@@ -142,6 +136,7 @@ module cpu_core(
 		PC_IFID,
 		ID_ALU_enable,
 		ID_ALU_data,
+		ID_ALU_PC,
 		ID_branchALU_enable,
 		ID_branchALU_data,
 		ID_ROB_tag1_ready,
@@ -167,10 +162,7 @@ module cpu_core(
 		ID_reg_addrd,
 		ID_reg_enable,
 		ID_reg_tagaddr,
-		ID_reg_tag,
-		PC_offset_valid,
-		PC_offset,
-		Decoder_branch_stall
+		ID_reg_tag
 	);
 
 	wire ALU_ALUCDB_alufinish;
@@ -181,11 +173,14 @@ module cpu_core(
 	wire [`aluRSWidth - 1 : 0] ALU_ALUCDB_outrsnum;
 	wire [`tagWidth   - 1 : 0] ALU_ALUCDB_outtag;
 	wire [`dataWidth  - 1 : 0] ALU_ALUCDB_outdata;
+	wire [`addrWidth  - 1 : 0] ALU_ALUCDB_outdest;
+	wire 					   ALU_ALUCDB_PC_valid;	
 	ALU alu(
 		clk, rst,
 		alu_IF_free,
 		ID_ALU_enable,
 		ID_ALU_data,
+		ID_ALU_PC,
 		ALU_ALUCDB_alufinish,
 		ALU_ALUCDB_rsnum,
 		ALU_ALUCDB_tag,
@@ -193,7 +188,9 @@ module cpu_core(
 		ALU_ALUCDB_alusignal,
 		ALU_ALUCDB_outrsnum,
 		ALU_ALUCDB_outtag,
-		ALU_ALUCDB_outdata
+		ALU_ALUCDB_outdata,
+		ALU_ALUCDB_outdest,
+		ALU_ALUCDB_PC_valid
 	);	
 
 	wire branchALU_ALUCDB_valid;
@@ -229,6 +226,8 @@ module cpu_core(
 		ALU_ALUCDB_outrsnum,
 		ALU_ALUCDB_outtag,
 		ALU_ALUCDB_outdata,
+		ALU_ALUCDB_outdest,
+		ALU_ALUCDB_PC_valid,
 		ALU_ALUCDB_alufinish,
 		ALU_ALUCDB_rsnum,
 		ALU_ALUCDB_tag,
@@ -238,7 +237,10 @@ module cpu_core(
 		ALUCDB_ROB_data,
 		branchALU_ALUCDB_valid,
 		branchALU_ALUCDB_tag,
-		branchALU_ALUCDB_data
+		branchALU_ALUCDB_data,
+		jump_dest_valid,
+		jump_dest,
+		jump_complete
 	);
 
 	branchALU_CDB branchalu_cdb(
@@ -251,7 +253,7 @@ module cpu_core(
 		branchALU_CDB_RSnum,
 		branch_offset_valid,
 		branch_offset,
-		branchALU_complete
+		branch_complete
 	);
 
 	wire ROB_reg_enable;

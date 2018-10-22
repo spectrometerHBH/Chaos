@@ -74,11 +74,11 @@ module ROB(
             LSBuf_CDB_tag : begin
                 tag1Ready = 1;
                 data1 = LSBuf_CDB_data;
-            end
+            end*/
             default : begin
                 tag1Ready = rob[tagCheck1][`robReadyRange];
                 data1 = rob[tagCheck1][`robDataRange];
-            end*/
+            end
         endcase
         case (tagCheck2) 
             `tagFree : begin
@@ -92,11 +92,11 @@ module ROB(
             LSBuf_CDB_tag : begin
                 tag2Ready = 1;
                 data2 = LSBuf_CDB_data;
-            end
+            end*/
             default : begin
                 tag2Ready = rob[tagCheck2][`robReadyRange];
                 data2 = rob[tagCheck2][`robDataRange];
-            end*/
+            end
         endcase
         case (tagCheckd)
             `tagFree : begin
@@ -106,6 +106,10 @@ module ROB(
             ALU_CDB_tag : begin
                 tagdReady = 1;
                 datad = ALU_CDB_data;
+            end
+            default : begin
+                tagdReady = rob[tagCheckd][`robReadyRange];
+                datad = rob[tagCheckd][`robDataRange];
             end
         endcase
     end
