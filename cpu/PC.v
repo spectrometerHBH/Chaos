@@ -24,10 +24,10 @@ module PC(
     	if (rst) begin
     		PC         <= `addrWidth'b0;
     	end else begin
-    		if (PC_stall)                 PC <= PC;
-    		else if (jump_dest_valid)     PC <= jump_dest;
+            if (PC_stall)                 PC <= PC;
+            else if (jump_dest_valid)     PC <= jump_dest;
             else if (branch_offset_valid) PC <= PC + branch_offset;
-            else                          PC <= PC + 4;	
+            else                          PC <= PC + 4;         
     	end
     end
 endmodule

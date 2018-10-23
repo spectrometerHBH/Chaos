@@ -5,6 +5,7 @@
 module cpu_core(
 	input wire clk,
 	input wire rst,
+	input wire exclk,
 	//output to memory_controller
 	output wire [1 * `rw_flagWidth - 1 : 0] rw_flag,
 	output wire [1 * `addrWidth    - 1 : 0] addr,
@@ -24,7 +25,7 @@ module cpu_core(
 	wire ICache_done; 
 
 	cache ICache(
-		clk, rst,
+		clk, rst, 
 		ICache_rw_flag,
 		ICache_addr,
 		ICache_read_data,
@@ -52,7 +53,7 @@ module cpu_core(
 	wire jump_complete;
 	wire branch_complete;
 	IFetcher IF(
-		clk, rst,
+		clk, rst, 
 		PC_IF,
 		ICache_rw_flag,
 		ICache_addr,
@@ -76,7 +77,7 @@ module cpu_core(
 	wire branch_offset_valid;
 	wire [`addrWidth - 1 : 0] branch_offset;
 	PC PC(
-		clk, rst,
+		clk, rst, 
 		IF_PC_stall,
 		PC_IF,
 		PC_IFID,
@@ -90,7 +91,7 @@ module cpu_core(
 	wire [`instWidth - 1 : 0] IF_ID_inst_out;
 	wire [`addrWidth - 1 : 0] IF_ID_pc_out;
 	IF_ID IF_ID(
-		clk, rst,
+		clk, rst, 
 		IF_IFID_stall,
 		IF_ID_inst,
 		IF_ID_valid,
@@ -130,7 +131,7 @@ module cpu_core(
 	wire [`tagWidth  - 1 : 0] ID_reg_tag;
 
 	Decoder ID(
-		clk, rst,
+		clk, rst, 
 		IF_ID_valid,
 		IF_ID_inst_out,
 		PC_IFID,
@@ -176,7 +177,7 @@ module cpu_core(
 	wire [`addrWidth  - 1 : 0] ALU_ALUCDB_outdest;
 	wire 					   ALU_ALUCDB_PC_valid;	
 	ALU alu(
-		clk, rst,
+		clk, rst, exclk,
 		alu_IF_free,
 		ID_ALU_enable,
 		ID_ALU_data,
@@ -203,7 +204,7 @@ module cpu_core(
 	wire 						       branchALU_CDB_out_result;
 	wire [`addrWidth          - 1 : 0] branchALU_CDB_out_offset;
 	branchALU branchalu(
-		clk, rst,
+		clk, rst, exclk,
 		ID_branchALU_enable,
 		ID_branchALU_data,
 		branchALU_ALUCDB_valid,
@@ -261,7 +262,7 @@ module cpu_core(
 	wire [`dataWidth - 1 : 0] ROB_reg_data;
 	wire [`tagWidth  - 1 : 0] ROB_reg_tag;
 	ROB rob(
-		clk, rst,
+		clk, rst, 
 		ID_ROB_enable,
 		ID_ROB_data,
 		ID_ROB_tagcheck1,
@@ -285,7 +286,7 @@ module cpu_core(
 	);
 
 	Regfile regfile(
-		clk, rst,
+		clk, rst, 
 		ROB_reg_enable,
 		ROB_reg_name,
 		ROB_reg_data,

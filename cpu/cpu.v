@@ -16,9 +16,13 @@ module cpu(
 	reg RST;
 	reg RST_delay;
 	
-	wire CLK;
+	reg CLK;
 	
-	assign CLK = EXCLK;
+	always @(posedge EXCLK or posedge button) begin
+		if (button) begin
+			CLK = 0;
+		end CLK = ~CLK;
+	end
 	
 	always @(posedge CLK or posedge button) begin
 		if(button) begin
@@ -37,7 +41,7 @@ module cpu(
 	wire		UART_sendable;
 	wire		UART_receivable;
 	
-	uart #(.BAUDRATE(25000000), .CLOCKRATE(100000000)) UART(
+	uart #(.BAUDRATE(12500000), .CLOCKRATE(50000000)) UART(
 		CLK, RST,
 		UART_send_flag, UART_send_data,
 		UART_recv_flag, UART_recv_data,
@@ -87,7 +91,7 @@ module cpu(
 		MEM_busy, MEM_done);
 	
 	cpu_core CORE(
-		CLK, RST,
+		CLK, RST, EXCLK,
 		MEM_rw_flag, 
 		MEM_addr,
 		MEM_read_data, 

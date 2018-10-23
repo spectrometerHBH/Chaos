@@ -20,14 +20,16 @@ module IF_ID(
 			valid 	    	<= 0;
 			inst_output 	<= `instWidth'b0;
 			inst_pc         <= 0;
-		end else if (stall) begin
-			valid 	    	<= 0;
-			inst_output 	<= `instWidth'b0;
-			inst_pc         <= 0;
 		end else begin
-			valid 			<= 1;			
-			inst_output 	<= inst_input;
-			inst_pc   		<= PC;
+			if (stall) begin
+				valid 	    	<= 0;
+				inst_output 	<= `instWidth'b0;
+				inst_pc         <= 0;
+			end else begin
+				valid 			<= 1;			
+				inst_output 	<= inst_input;
+				inst_pc   		<= PC;
+			end
 		end
 	end
 endmodule

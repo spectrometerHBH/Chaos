@@ -3,19 +3,27 @@
 `timescale 1ns / 1ps
 
 module sim_memory(
-	input CLK,
+	input EXCLK,
 	input RST,
 	output Tx,
 	input Rx
     );
     
+    reg CLK;
+	
+	always @(posedge EXCLK or posedge RST) begin
+		if (RST) begin
+			CLK = 0;
+		end CLK = ~CLK;
+	end
+
     wire send_flag;
 	wire [7:0] send_data;
 	wire recv_flag;
 	wire [7:0] recv_data;
 	
 	wire recvable, sendable;
-	uart #(.BAUDRATE(25000000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
+	uart #(.BAUDRATE(12500000)) uart(CLK, RST, send_flag, send_data, recv_flag, recv_data, sendable, recvable, Tx, Rx);
 	
 	reg read_flag;
 	wire [4:0] read_data_length;

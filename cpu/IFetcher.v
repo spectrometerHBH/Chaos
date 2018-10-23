@@ -42,20 +42,12 @@ module IFetcher(
 
 	always @(*) begin
 		if (rst) begin
-			branch_stalling = 0;
 			first_inst = 1;
 			IFID_stall = 1;
 		end else begin
 			if (ICache_done) begin
 				//done = 1
 				if (first_inst) first_inst = 0;
-				case (read_data[`classOpRange])
-					`classBranch : branch_stalling = 1; 
-					`classAUIPC  : branch_stalling = 1;
-					`classJAL    : branch_stalling = 1;
-					`classJALR   : branch_stalling = 1;
-					default : branch_stalling = 0;
-				endcase
 				IFID_stall = 0;
 			end else if (ICache_busy) begin
 				//busy = 1 done = 0
@@ -67,9 +59,17 @@ module IFetcher(
 		end
 	end
 
-	always @(*) begin
+	always @ (*) begin
 		if (jump_complete || branch_complete) begin
 			branch_stalling = 0;
+		end else if (ICache_done) begin	
+			case (read_data[`classOpRange])
+				`classBranch : branch_stalling = 1; 
+				`classAUIPC  : branch_stalling = 1;
+				`classJAL    : branch_stalling = 1;
+				`classJALR   : branch_stalling = 1;
+				default : branch_stalling = 0;
+			endcase
 		end
 	end
 	

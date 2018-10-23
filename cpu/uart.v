@@ -5,7 +5,7 @@
 module uart
 	#(
 	parameter BAUDRATE = 9600,
-	parameter CLOCKRATE = 100000000
+	parameter CLOCKRATE = 50000000
 	)(
 	input CLK,
 	input RST,

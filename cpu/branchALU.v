@@ -5,6 +5,7 @@
 module branchALU(
 	input wire clk, 
 	input wire rst,
+	input wire exclk,
 	//input from Decoder
 	input wire branchALUEnable, 
 	input wire [`branchALUWidth - 1 : 0] inst,  
@@ -45,6 +46,7 @@ module branchALU(
 	end
 
 	//Pull update from CDB
+	/*
 	integer j;
 	always @ (negedge clk) begin
 		if (rst) begin
@@ -79,12 +81,13 @@ module branchALU(
 						RS[i][`branchALUTag2Range]  <= `tagFree;
 					end
 				end
-			end*/
+			end
 		end
 	end
+	*/
 
 	integer i, l;
-	always @ (posedge clk) begin
+	always @ (posedge exclk or posedge rst) begin
 		if (rst) begin
 			branchALUSignal 	       <= `INVALID;
 			branchALU_CDB_out_RSnum    <= 0;
@@ -94,27 +97,60 @@ module branchALU(
 				RS[l] <= `branchALUWidth'b0;
 			end  
 		end else begin
-			if (branchALUEnable & empty) begin
-				RS[`CLOG2(empty)] <= inst;
-			end
-			branchALUSignal 		   <= `INVALID;
-			branchALU_CDB_out_RSnum    <= 0;
-			branchALU_CDB_out_result   <= 0;
-			branchALU_CDB_out_offset   <= `addrWidth'b0;
-			if (ready) begin
-				i = `CLOG2(ready);
-				branchALUSignal <= `VALID;
-				branchALU_CDB_out_offset <= RS[i][`branchALUOffsetRange];
-				branchALU_CDB_out_RSnum  <= i;
-				case (RS[i][`branchALUOpRange])
-					`BEQ  : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          == RS[i][`branchALUData2Range];
-					`BNE  : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          != RS[i][`branchALUData2Range];
-					`BLT  : branchALU_CDB_out_result <= $signed(RS[i][`branchALUData1Range]) <  $signed(RS[i][`branchALUData2Range]);
-					`BGE  : branchALU_CDB_out_result <= $signed(RS[i][`branchALUData1Range]) >= $signed(RS[i][`branchALUData2Range]);
-					`BLTU : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          <  RS[i][`branchALUData2Range];
-					`BGEU : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          >= RS[i][`branchALUData2Range];
-					default : ;
-				endcase
+			if (clk) begin
+				if (branchALUEnable & empty) begin
+					RS[`CLOG2(empty)] <= inst;
+				end
+				branchALUSignal 		   <= `INVALID;
+				branchALU_CDB_out_RSnum    <= 0;
+				branchALU_CDB_out_result   <= 0;
+				branchALU_CDB_out_offset   <= `addrWidth'b0;
+				if (ready) begin
+					i = `CLOG2(ready);
+					branchALUSignal <= `VALID;
+					branchALU_CDB_out_offset <= RS[i][`branchALUOffsetRange];
+					branchALU_CDB_out_RSnum  <= i;
+					case (RS[i][`branchALUOpRange])
+						`BEQ  : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          == RS[i][`branchALUData2Range];
+						`BNE  : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          != RS[i][`branchALUData2Range];
+						`BLT  : branchALU_CDB_out_result <= $signed(RS[i][`branchALUData1Range]) <  $signed(RS[i][`branchALUData2Range]);
+						`BGE  : branchALU_CDB_out_result <= $signed(RS[i][`branchALUData1Range]) >= $signed(RS[i][`branchALUData2Range]);
+						`BLTU : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          <  RS[i][`branchALUData2Range];
+						`BGEU : branchALU_CDB_out_result <= RS[i][`branchALUData1Range]          >= RS[i][`branchALUData2Range];
+						default : ;
+					endcase
+				end
+			end else begin
+				if (ALU_CDB_valid) begin
+					for (i = 0; i < `branchALURSsize; i = i + 1) begin
+						if (RS[i][`branchALUOpRange] != `NOP && RS[i][`branchALUTag1Range] == ALU_CDB_tag && RS[i][`branchALUTag1Range] != `tagFree) begin
+							RS[i][`branchALUData1Range] <= ALU_CDB_data;
+							RS[i][`branchALUTag1Range]  <= `tagFree;  
+						end
+						if (RS[i][`branchALUOpRange] != `NOP && RS[i][`branchALUTag2Range] == ALU_CDB_tag && RS[i][`branchALUTag2Range] != `tagFree) begin
+							RS[i][`branchALUData2Range] <= ALU_CDB_data;
+							RS[i][`branchALUTag2Range]  <= `tagFree;
+						end
+					end
+				end
+				if (branchALUFinish) begin
+					branchALUSignal <= `INVALID;
+					RS[branchALU_CDB_RSnum] <= {(`branchALUWidth){1'b0}}; 
+				end
+				/*
+				if (LSBuf_CDB_valid) begin
+					for (i = 0; i < `branchALURSsize; i = i + 1) begin
+						if (RS[i][`branchALUOpRange] != `NOP && RS[i][`branchALUTag1Range] == LSBuf_CDB_tag && RS[i][`branchALUTag1Range] != `tagFree) begin
+							RS[i][`branchALUData1Range] <= LSBuf_CDB_data;
+							RS[i][`branchALUTag1Range]  <= `tagFree;  
+						end
+						if (RS[i][`branchALUOpRange] != `NOP && RS[i][`branchALUTag2Range] == LSBuf_CDB_tag && RS[i][`branchALUTag2Range] != `tagFree) begin
+							RS[i][`branchALUData2Range] <= LSBuf_CDB_data;
+							RS[i][`branchALUTag2Range]  <= `tagFree;
+						end
+					end
+				end
+				*/
 			end
 		end
 	end
