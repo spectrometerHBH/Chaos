@@ -6,7 +6,7 @@ module ALU(
     input wire clk, 
     input wire rst,
     input wire exclk,
-    //output to IFetcher
+    //output to PC
     output wire free,
     //input from Decoder
     input wire aluEnable, 
@@ -30,18 +30,17 @@ module ALU(
     output reg [`dataWidth  - 1 : 0] ALU_CDB_out_data,
     output reg [`addrWidth  - 1 : 0] ALU_CDB_out_offset,
     output reg                       ALU_CDB_PC_valid
-    //input from ROB
-    //input wire mispredictionRst
 );
     //{Dest, Tag2, Data2, Tag1, Data1, Op}
     reg  [`aluWidth - 1 : 0] RS[`aluRSsize - 1 : 0];
     reg  [`aluRSsize   - 1 : 0] freeState, readyState;
+    reg  [`aluRSsize   - 1 : 0] counter;
     wire [`aluRSsize   - 1 : 0] empty;
     wire [`aluRSsize   - 1 : 0] ready;
 
     assign empty = freeState & (-freeState);
     assign ready = readyState & (-readyState);
-    assign free  = empty != 0 ? 1 : 0;
+    assign free  = (counter < `aluRSsize) ? 1 : 0;
 
     integer k;
     //Supervise free and ready situation
@@ -98,6 +97,7 @@ module ALU(
             ALU_CDB_out_RSnum <= 0;
             ALU_CDB_out_tag <= `tagFree;
             ALU_CDB_out_data <= `dataWidth'b0;
+            counter          <= 0;
             ALU_CDB_out_offset <= 0;
             ALU_CDB_PC_valid <= 0;
             for (l = 0; l < `aluRSsize; l = l + 1) begin
@@ -107,6 +107,7 @@ module ALU(
             if (clk) begin
                 if (aluEnable & empty) begin
                     RS[`CLOG2(empty)] <= inst;
+                    counter           <= counter + 1;
                 end
                 aluSignal <= `INVALID;
                 ALU_CDB_out_RSnum <= 0;
@@ -148,6 +149,7 @@ module ALU(
                 if (aluFinish) begin
                     aluSignal <= `INVALID;
                     RS[ALU_CDB_RSnum] <= {(`aluWidth){1'b0}};
+                    counter   <= counter - 1;
                     for (i = 0; i < `aluRSsize; i = i + 1) begin
                         if (RS[i][`aluOpRange] != `NOP && RS[i][`aluTag1Range] == ALU_CDB_tag && RS[i][`aluTag1Range] != `tagFree) begin
                             RS[i][`aluData1Range] <= ALU_CDB_data;

@@ -24,7 +24,7 @@ module cpu(
 		end CLK = ~CLK;
 	end
 	
-	always @(posedge CLK or posedge button) begin
+	always @(posedge EXCLK or posedge button) begin
 		if(button) begin
 			RST <= 1;
 			RST_delay <= 1;
@@ -41,7 +41,7 @@ module cpu(
 	wire		UART_sendable;
 	wire		UART_receivable;
 	
-	uart #(.BAUDRATE(12500000), .CLOCKRATE(50000000)) UART(
+	uart #(.BAUDRATE(9600), .CLOCKRATE(50000000)) UART(
 		CLK, RST,
 		UART_send_flag, UART_send_data,
 		UART_recv_flag, UART_recv_data,

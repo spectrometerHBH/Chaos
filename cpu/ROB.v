@@ -5,6 +5,7 @@
 module ROB(
     input wire clk,
     input wire rst,
+    input wire exclk,
     //input from Decoder
     input wire robInsertEnable,
     input wire [`robWidth - 1 : 0] instToInsert,
@@ -34,8 +35,7 @@ module ROB(
     input wire [`tagWidth  - 1 : 0] LSBuf_CDB_tag,
     input wire [`dataWidth - 1 : 0] LSBuf_CDB_data, 
     */
-
-    //output to IFetcher
+    //output to PC
     output wire freeState,
     //output to Regfile
     output reg regfileEnable,
@@ -55,6 +55,7 @@ module ROB(
     assign headFinish           = (counter != 0 && rob[frontPointer][`robCompleteRange]) ? 1 : 0;
     assign headReady            = (counter != 0 && rob[frontPointer][`robReadyRange])    ? 1 : 0;
     assign freeState            = (counter < `ROBsize) ? 1 : 0;
+    //assign freeState            = 1;
     assign tailptr              = tailPointer;
     assign ALU_CDB_robNumber    = ALU_CDB_tag   [`tagWidth - 2 : 0];
     //assign branch_CDB_robNumber = branch_CDB_tag[`tagWidth - 2 : 0];
@@ -114,30 +115,15 @@ module ROB(
         endcase
     end
 
-    //Pull update from CDB
-    always @ (negedge clk) begin
-        if (ALU_ROB_valid) begin
-            rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
-            rob[ALU_CDB_robNumber][`robReadyRange] <= 1;
-        end
-        /*
-        if (branch_ROB_valid) begin
-        end
-
-        if (LSBuf_ROB_valid) begin
-
-        end*/
-    end
-
     integer i;
-    always @ (posedge clk or posedge rst) begin
+    always @ (posedge exclk or posedge rst) begin
         if (rst) begin
             frontPointer <= 1'b0;
             tailPointer  <= 1'b0;
             counter      <= 1'b0;
             for (i = 0; i < `ROBsize; i = i + 1)
                 rob[i] <= `ROBsize'b0;
-        end else begin
+        end else if (clk) begin
             //Kick front
             if (headFinish) begin
                 counter <= counter - 1;
@@ -152,23 +138,24 @@ module ROB(
                     tailPointer <= tailPointer + 1; 
                 end
             end
-        end
-    end
-
-    //Execute front
-    always @ (*) begin
-        regfileEnable <= 0;
-        if (counter && headReady) begin
-            case (head[`robOpRange])
-                `robClassNormal: begin
-                    regfileEnable <= 1;
-                    rob_reg_name <= head[`robRegRange];
-                    rob_reg_data <= head[`robDataRange];
-                    rob_reg_tag  <= frontPointer;  
-                    rob[frontPointer][`robCompleteRange] <= 1;
-                end
-                default : ;
-            endcase  
+        end else begin
+            if (ALU_ROB_valid) begin
+                rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
+                rob[ALU_CDB_robNumber][`robReadyRange] <= 1;
+            end
+            regfileEnable <= 0;
+            if (counter && headReady) begin
+                case (head[`robOpRange])
+                    `robClassNormal: begin
+                        regfileEnable <= 1;
+                        rob_reg_name <= head[`robRegRange];
+                        rob_reg_data <= head[`robDataRange];
+                        rob_reg_tag  <= frontPointer;  
+                        rob[frontPointer][`robCompleteRange] <= 1;
+                    end
+                    default : ;
+                endcase  
+            end
         end
     end
 endmodule

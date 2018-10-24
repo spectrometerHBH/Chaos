@@ -15,15 +15,12 @@ module branchALU_CDB(
     output wire [`branchALURSWidth - 1 : 0] branchALURSNumOut,
     //output to PC
     output wire                             branch_offset_valid,
-    output wire [`addrWidth        - 1 : 0] branch_offset,
-    //output to IFetcher
-    output wire                             branch_complete 
+    output wire [`addrWidth        - 1 : 0] branch_offset
 );
 
     assign branchALUFinish     = branchALUSignal;
     assign branchALURSNumOut   = branchALUSignal ? branchALURSNumIn : 0;
     assign branch_offset_valid = branchALUSignal;  
     assign branch_offset       = branchALUSignal ? (branchALUResultIn ? branchALUOffsetIn : 4) : 0;
-    assign branch_complete     = branchALUSignal;
 
 endmodule

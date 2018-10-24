@@ -1,1 +1,1 @@
-sudo ./cpu-judge --com-port /dev/ttyUSB2 --memory arith.bin
+sudo ./cpu-judge --com-port /dev/ttyUSB1 --memory sample.bin

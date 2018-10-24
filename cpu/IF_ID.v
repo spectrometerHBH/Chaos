@@ -5,23 +5,26 @@
 module IF_ID(
 	input wire clk,
 	input wire rst,
-	//input from Fetcher
-	input wire stall,
-	input wire [`instWidth - 1 : 0] inst_input,
-	//output to Decoder	
-	output reg valid, 
-	output reg [`instWidth - 1 : 0] inst_output,
-	output reg [`addrWidth - 1 : 0] inst_pc,
 	//input from PC
-	input wire [`addrWidth - 1 : 0] PC
+	input wire enable,
+	input wire [`addrWidth - 1 : 0] PC,
+	input wire [`instWidth - 1 : 0] inst_input,
+	//output to Decoder
+	output reg valid,
+	output reg [`instWidth - 1 : 0] inst_output,
+	output reg [`addrWidth - 1 : 0] inst_pc
 );
-	always @(negedge clk or posedge rst) begin
+    //reg valid;
+    //reg [`instWidth - 1 : 0] inst_output;
+    //reg [`addrWidth - 1 : 0] inst_pc;
+    
+	always @(posedge clk or posedge rst) begin
 		if (rst) begin
 			valid 	    	<= 0;
 			inst_output 	<= `instWidth'b0;
 			inst_pc         <= 0;
 		end else begin
-			if (stall) begin
+			if (!enable) begin
 				valid 	    	<= 0;
 				inst_output 	<= `instWidth'b0;
 				inst_pc         <= 0;

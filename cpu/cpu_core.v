@@ -44,17 +44,25 @@ module cpu_core(
 		done
 	);
 
-	wire [`addrWidth - 1 : 0] PC_IF;
-	wire [`instWidth - 1 : 0] IF_ID_inst;
-	wire IF_IFID_stall;
-	wire IF_PC_stall;
-	wire alu_IF_free;
-	wire rob_IF_free;
-	wire jump_complete;
-	wire branch_complete;
-	IFetcher IF(
+	wire PC_IFID_enable;
+	wire [`addrWidth - 1 : 0] PC_IFID_PC;
+	wire [`instWidth - 1 : 0] PC_IFID_inst;
+	wire jump_dest_valid;
+	wire [`addrWidth - 1 : 0] jump_dest;
+	wire branch_offset_valid;
+	wire [`addrWidth - 1 : 0] branch_offset;
+	wire alu_PC_free;
+	wire rob_PC_free;
+	
+	PC pc(
 		clk, rst, 
-		PC_IF,
+		PC_IFID_enable,
+		PC_IFID_PC,
+		PC_IFID_inst,
+		jump_dest_valid,
+		jump_dest,
+		branch_offset_valid,
+		branch_offset,
 		ICache_rw_flag,
 		ICache_addr,
 		ICache_write_data,
@@ -62,246 +70,225 @@ module cpu_core(
 		ICache_read_data,
 		ICache_busy,
 		ICache_done,
-		IF_IFID_stall,
-		IF_ID_inst,
-		IF_PC_stall,
-		alu_IF_free,
-		rob_IF_free,
-		jump_complete,
-		branch_complete
+		alu_PC_free,
+		rob_PC_free
 	);
 
-	wire [`addrWidth - 1 : 0] PC_IFID;
-	wire jump_dest_valid;
-	wire [`addrWidth - 1 : 0] jump_dest;
-	wire branch_offset_valid;
-	wire [`addrWidth - 1 : 0] branch_offset;
-	PC PC(
-		clk, rst, 
-		IF_PC_stall,
-		PC_IF,
-		PC_IFID,
-		jump_dest_valid,
-		jump_dest,
-		branch_offset_valid,
-		branch_offset
-	);
-
-	wire IF_ID_valid;
-	wire [`instWidth - 1 : 0] IF_ID_inst_out;
-	wire [`addrWidth - 1 : 0] IF_ID_pc_out;
+    wire IF_ID_Decoder_valid;
+    wire [`instWidth - 1 : 0] IF_ID_Decoder_inst_output;
+    wire [`addrWidth - 1 : 0] IF_ID_Decoder_inst_pc;
 	IF_ID IF_ID(
 		clk, rst, 
-		IF_IFID_stall,
-		IF_ID_inst,
-		IF_ID_valid,
-		IF_ID_inst_out,
-		IF_ID_pc_out,
-		PC_IFID
+		PC_IFID_enable,
+		PC_IFID_PC,
+		PC_IFID_inst,
+		IF_ID_Decoder_valid,
+		IF_ID_Decoder_inst_output,
+		IF_ID_Decoder_inst_pc
 	);
-
-	wire ID_ALU_enable;
-	wire [`aluWidth - 1 : 0] ID_ALU_data;
-	wire [`addrWidth - 1 : 0] ID_ALU_PC;
-	wire ID_branchALU_enable;
-	wire [`branchALUWidth - 1 : 0] ID_branchALU_data;
-	wire ID_ROB_tag1_ready;
-	wire ID_ROB_tag2_ready;
-	wire ID_ROB_tagd_ready;
-	wire [`tagWidth  - 2 : 0] ID_ROB_robtail;
-	wire [`dataWidth - 1 : 0] ID_ROB_data1;
-	wire [`dataWidth - 1 : 0] ID_ROB_data2;
-	wire [`dataWidth - 1 : 0] ID_ROB_datad;
-	wire ID_ROB_enable;
-	wire [`robWidth  - 1 : 0] ID_ROB_data;
-	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheck1;
-	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheck2;
-	wire [`tagWidth  - 1 : 0] ID_ROB_tagcheckd;
-	wire [`tagWidth  - 1 : 0] ID_reg_tag1; 
-	wire [`tagWidth  - 1 : 0] ID_reg_tag2;
-	wire [`tagWidth  - 1 : 0] ID_reg_tagd;
-	wire [`dataWidth - 1 : 0] ID_reg_data1;
-	wire [`dataWidth - 1 : 0] ID_reg_data2;
-	wire [`dataWidth - 1 : 0] ID_reg_datad;
-	wire [`regWidth  - 1 : 0] ID_reg_addr1;
-	wire [`regWidth  - 1 : 0] ID_reg_addr2;
-	wire [`regWidth  - 1 : 0] ID_reg_addrd;
-	wire ID_reg_enable;
-	wire [`regWidth  - 1 : 0] ID_reg_tagaddr;
-	wire [`tagWidth  - 1 : 0] ID_reg_tag;
-
-	Decoder ID(
-		clk, rst, 
-		IF_ID_valid,
-		IF_ID_inst_out,
-		PC_IFID,
-		ID_ALU_enable,
-		ID_ALU_data,
-		ID_ALU_PC,
-		ID_branchALU_enable,
-		ID_branchALU_data,
-		ID_ROB_tag1_ready,
-		ID_ROB_tag2_ready,
-		ID_ROB_tagd_ready,
-		ID_ROB_robtail,
-		ID_ROB_data1,
-		ID_ROB_data2,
-		ID_ROB_datad,
-		ID_ROB_enable,
-		ID_ROB_data,
-		ID_ROB_tagcheck1,
-		ID_ROB_tagcheck2,
-		ID_ROB_tagcheckd,
-		ID_reg_tag1,
-		ID_reg_tag2,
-		ID_reg_tagd,
-		ID_reg_data1,
-		ID_reg_data2,
-		ID_reg_datad,
-		ID_reg_addr1,
-		ID_reg_addr2,
-		ID_reg_addrd,
-		ID_reg_enable,
-		ID_reg_tagaddr,
-		ID_reg_tag
+	
+    wire Decoder_ALU_aluEnable;
+    wire [`aluWidth - 1 : 0] Decoder_ALU_aluData;
+    wire [`addrWidth - 1 : 0] Decoder_ALU_inst_PC_out;
+    wire Decoder_branchALU_branchALUEnable;
+    wire [`branchALUWidth - 1 : 0] Decoder_branchALU_branchALUData;
+    wire Decoder_ROB_tag1Ready;
+    wire Decoder_ROB_tag2Ready;
+    wire Decoder_ROB_tagdReady;
+    wire [`tagWidth  - 2 : 0] Decoder_ROB_ROBtail;
+    wire [`dataWidth - 1 : 0] Decoder_ROB_robData1;
+    wire [`dataWidth - 1 : 0] Decoder_ROB_robData2;
+    wire [`dataWidth - 1 : 0] Decoder_ROB_robDatad;
+    wire Decoder_ROB_robEnable;
+    wire [`robWidth - 1 : 0] Decoder_ROB_robData;
+    wire [`tagWidth - 1 : 0] Decoder_ROB_tagCheck1;
+    wire [`tagWidth - 1 : 0] Decoder_ROB_tagCheck2;
+    wire [`tagWidth - 1 : 0] Decoder_ROB_tagCheckd;
+    wire [`tagWidth - 1 : 0] Decoder_reg_regTag1;
+    wire [`tagWidth - 1 : 0] Decoder_reg_regTag2;
+    wire [`tagWidth - 1 : 0] Decoder_reg_regTagd;
+    wire [`dataWidth - 1 : 0] Decoder_reg_regData1;
+    wire [`dataWidth - 1 : 0] Decoder_reg_regData2;
+    wire [`dataWidth - 1 : 0] Decoder_reg_regDatad;
+    wire [`regWidth - 1 : 0] Decoder_reg_regAddr1;
+    wire [`regWidth - 1 : 0] Decoder_reg_regAddr2;
+    wire [`regWidth - 1 : 0] Decoder_reg_regAddrd;
+    wire Decoder_reg_regEnable;
+    wire [`regWidth - 1 : 0] Decoder_reg_regTagAddr;
+    wire [`tagWidth - 1 : 0] Decoder_reg_regTag;
+    	
+	Decoder decoder(
+	   clk, rst,
+	   IF_ID_Decoder_valid,
+	   IF_ID_Decoder_inst_output,
+	   IF_ID_Decoder_inst_pc,
+	   Decoder_ALU_aluEnable,
+	   Decoder_ALU_aluData,
+	   Decoder_ALU_inst_PC_out,
+	   Decoder_branchALU_branchALUEnable,
+	   Decoder_branchALU_branchALUData,
+	   Decoder_ROB_tag1Ready,
+	   Decoder_ROB_tag2Ready,
+	   Decoder_ROB_tagdReady,
+	   Decoder_ROB_ROBtail,
+	   Decoder_ROB_robData1,
+	   Decoder_ROB_robData2,
+	   Decoder_ROB_robDatad,
+	   Decoder_ROB_robEnable,
+	   Decoder_ROB_robData,
+	   Decoder_ROB_tagCheck1,
+	   Decoder_ROB_tagCheck2,
+	   Decoder_ROB_tagCheckd,
+	   Decoder_reg_regTag1,
+	   Decoder_reg_regTag2,
+	   Decoder_reg_regTagd,
+	   Decoder_reg_regData1,
+	   Decoder_reg_regData2,
+	   Decoder_reg_regDatad,
+	   Decoder_reg_regAddr1,
+	   Decoder_reg_regAddr2,
+	   Decoder_reg_regAddrd,
+	   Decoder_reg_regEnable,
+	   Decoder_reg_regTagAddr,
+	   Decoder_reg_regTag
 	);
-
-	wire ALU_ALUCDB_alufinish;
-	wire [`aluRSWidth - 1 : 0] ALU_ALUCDB_rsnum;
-	wire [`tagWidth   - 1 : 0] ALU_ALUCDB_tag;
-	wire [`dataWidth  - 1 : 0] ALU_ALUCDB_data;
-	wire ALU_ALUCDB_alusignal;
-	wire [`aluRSWidth - 1 : 0] ALU_ALUCDB_outrsnum;
-	wire [`tagWidth   - 1 : 0] ALU_ALUCDB_outtag;
-	wire [`dataWidth  - 1 : 0] ALU_ALUCDB_outdata;
-	wire [`addrWidth  - 1 : 0] ALU_ALUCDB_outdest;
-	wire 					   ALU_ALUCDB_PC_valid;	
+	
+    wire ALU_ALUCDB_aluFinish;
+    wire [`aluRSWidth - 1 : 0] ALU_ALUCDB_ALU_CDB_RSnum;
+    wire [`tagWidth   - 1 : 0] ALU_ALUCDB_ALU_CDB_tag;
+    wire [`dataWidth  - 1 : 0] ALU_ALUCDB_ALU_CDB_data;
+    wire ALU_ALUCDB_aluSignal;
+    wire [`aluRSWidth - 1 : 0] ALU_ALUCDB_ALU_CDB_out_RSnum;
+    wire [`tagWidth   - 1 : 0] ALU_ALUCDB_ALU_CDB_out_tag;
+    wire [`dataWidth  - 1 : 0] ALU_ALUCDB_ALU_CDB_out_data;
+    wire [`addrWidth  - 1 : 0] ALU_ALUCDB_ALU_CDB_out_offset;
+    wire                       ALU_ALUCDB_ALU_CDB_PC_valid;
 	ALU alu(
-		clk, rst, exclk,
-		alu_IF_free,
-		ID_ALU_enable,
-		ID_ALU_data,
-		ID_ALU_PC,
-		ALU_ALUCDB_alufinish,
-		ALU_ALUCDB_rsnum,
-		ALU_ALUCDB_tag,
-		ALU_ALUCDB_data,
-		ALU_ALUCDB_alusignal,
-		ALU_ALUCDB_outrsnum,
-		ALU_ALUCDB_outtag,
-		ALU_ALUCDB_outdata,
-		ALU_ALUCDB_outdest,
-		ALU_ALUCDB_PC_valid
-	);	
+	   clk, rst, exclk,
+	   alu_PC_free,
+	   Decoder_ALU_aluEnable,
+	   Decoder_ALU_aluData,
+	   Decoder_ALU_inst_PC_out,
+	   ALU_ALUCDB_aluFinish,
+	   ALU_ALUCDB_ALU_CDB_RSnum,
+	   ALU_ALUCDB_ALU_CDB_tag,
+	   ALU_ALUCDB_ALU_CDB_data,
+	   ALU_ALUCDB_aluSignal,
+	   ALU_ALUCDB_ALU_CDB_out_RSnum,
+	   ALU_ALUCDB_ALU_CDB_out_tag,
+	   ALU_ALUCDB_ALU_CDB_out_data,
+	   ALU_ALUCDB_ALU_CDB_out_offset,
+	   ALU_ALUCDB_ALU_CDB_PC_valid
+	);
 
-	wire branchALU_ALUCDB_valid;
-	wire [`tagWidth   - 1 : 0] branchALU_ALUCDB_tag;
-	wire [`dataWidth  - 1 : 0] branchALU_ALUCDB_data;
-	wire 							   branchALUFinish;
-	wire [`branchALURSWidth  - 1 : 0]  branchALU_CDB_RSnum;
-	wire 							   branchALUSignal;
-	wire [`branchALURSWidth   - 1 : 0] branchALU_CDB_out_RSnum;
-	wire 						       branchALU_CDB_out_result;
-	wire [`addrWidth          - 1 : 0] branchALU_CDB_out_offset;
+	wire ALUCDB_ROB_valid_ROB;
+	wire [`tagWidth  - 1 : 0] ALUCDB_ROB_robTagOut;
+	wire [`dataWidth - 1 : 0] ALUCDB_ROB_robDataOut;
+	wire ALUCDB_BranchALU_valid_branch;
+	wire [`tagWidth  - 1 : 0] ALUCDB_BranchALU_branchALUTagOut;
+	wire [`dataWidth - 1 : 0] ALUCDB_BranchALU_branchALUDataOut;
+	
+	ALU_CDB alucdb(
+		clk, rst,
+		ALU_ALUCDB_aluSignal,
+		ALU_ALUCDB_ALU_CDB_out_RSnum,
+		ALU_ALUCDB_ALU_CDB_out_tag,
+		ALU_ALUCDB_ALU_CDB_out_data,
+		ALU_ALUCDB_ALU_CDB_out_offset,
+		ALU_ALUCDB_ALU_CDB_PC_valid,
+		ALU_ALUCDB_aluFinish,
+		ALU_ALUCDB_ALU_CDB_RSnum,
+		ALU_ALUCDB_ALU_CDB_tag,
+		ALU_ALUCDB_ALU_CDB_data,
+		ALUCDB_ROB_valid_ROB,
+		ALUCDB_ROB_robTagOut,
+		ALUCDB_ROB_robDataOut,
+		ALUCDB_BranchALU_valid_branch,
+		ALUCDB_BranchALU_branchALUTagOut,
+		ALUCDB_BranchALU_branchALUDataOut,
+		jump_dest_valid,
+		jump_dest
+	);
+
+	wire branchALU_branchALU_CDB_branchALUFinish;
+	wire [`branchALURSWidth   - 1 : 0] branchALU_branchALU_CDB_branchALU_CDB_RSnum;
+	wire 							   branchALU_branchALU_CDB_branchALUSignal;
+	wire [`branchALURSWidth   - 1 : 0] branchALU_branchALU_CDB_branchALU_CDB_out_RSnum;
+	wire 						        branchALU_branchALU_CDB_branchALU_CDB_out_result;
+	wire [`addrWidth          - 1 : 0] branchALU_branchALU_CDB_branchALU_CDB_out_offset;
 	branchALU branchalu(
 		clk, rst, exclk,
-		ID_branchALU_enable,
-		ID_branchALU_data,
-		branchALU_ALUCDB_valid,
-		branchALU_ALUCDB_tag,
-		branchALU_ALUCDB_data,
-		branchALUFinish,
-		branchALU_CDB_RSnum,
-		branchALUSignal,
-		branchALU_CDB_out_RSnum,
-		branchALU_CDB_out_result,
-		branchALU_CDB_out_offset
-	);
-
-	wire ALUCDB_ROB_valid;
-	wire [`tagWidth  - 1 : 0] ALUCDB_ROB_tag;
-	wire [`dataWidth - 1 : 0] ALUCDB_ROB_data;
-	ALU_CDB alu_cdb(
-		clk, rst,
-		ALU_ALUCDB_alusignal,
-		ALU_ALUCDB_outrsnum,
-		ALU_ALUCDB_outtag,
-		ALU_ALUCDB_outdata,
-		ALU_ALUCDB_outdest,
-		ALU_ALUCDB_PC_valid,
-		ALU_ALUCDB_alufinish,
-		ALU_ALUCDB_rsnum,
-		ALU_ALUCDB_tag,
-		ALU_ALUCDB_data,
-		ALUCDB_ROB_valid,
-		ALUCDB_ROB_tag,
-		ALUCDB_ROB_data,
-		branchALU_ALUCDB_valid,
-		branchALU_ALUCDB_tag,
-		branchALU_ALUCDB_data,
-		jump_dest_valid,
-		jump_dest,
-		jump_complete
+		Decoder_branchALU_branchALUEnable,
+		Decoder_branchALU_branchALUData,
+		ALUCDB_BranchALU_valid_branch,
+		ALUCDB_BranchALU_branchALUTagOut,
+		ALUCDB_BranchALU_branchALUDataOut,
+		branchALU_branchALU_CDB_branchALUFinish,
+		branchALU_branchALU_CDB_branchALU_CDB_RSnum,
+		branchALU_branchALU_CDB_branchALUSignal,
+		branchALU_branchALU_CDB_branchALU_CDB_out_RSnum,
+		branchALU_branchALU_CDB_branchALU_CDB_out_result,
+		branchALU_branchALU_CDB_branchALU_CDB_out_offset
 	);
 
 	branchALU_CDB branchalu_cdb(
 		clk, rst,
-		branchALUSignal,
-		branchALU_CDB_out_RSnum,
-		branchALU_CDB_out_result,
-		branchALU_CDB_out_offset,
-		branchALUFinish,
-		branchALU_CDB_RSnum,
-		branch_offset_valid,
-		branch_offset,
-		branch_complete
+		branchALU_branchALU_CDB_branchALUSignal,
+		branchALU_branchALU_CDB_branchALU_CDB_out_RSnum,
+		branchALU_branchALU_CDB_branchALU_CDB_out_result,
+		branchALU_branchALU_CDB_branchALU_CDB_out_offset,
+		branchALU_branchALU_CDB_branchALUFinish,
+		branchALU_branchALU_CDB_branchALU_CDB_RSnum,
+	    branch_offset_valid,
+        branch_offset
 	);
 
-	wire ROB_reg_enable;
-	wire [`regWidth  - 1 : 0] ROB_reg_name;
-	wire [`dataWidth - 1 : 0] ROB_reg_data;
-	wire [`tagWidth  - 1 : 0] ROB_reg_tag;
-	ROB rob(
-		clk, rst, 
-		ID_ROB_enable,
-		ID_ROB_data,
-		ID_ROB_tagcheck1,
-		ID_ROB_tagcheck2,
-		ID_ROB_tagcheckd,
-		ID_ROB_robtail,
-		ID_ROB_tag1_ready,
-		ID_ROB_tag2_ready,
-		ID_ROB_tagd_ready,
-		ID_ROB_data1,
-		ID_ROB_data2,
-		ID_ROB_datad,
-		ALUCDB_ROB_valid,
-		ALUCDB_ROB_tag,
-		ALUCDB_ROB_data,
-		rob_IF_free,
-		ROB_reg_enable,
-		ROB_reg_name,
-		ROB_reg_data,
-		ROB_reg_tag
-	);
+    //output to Regfile
+    wire ROB_reg_regfileEnable;
+    wire [`regWidth  - 1 : 0] ROB_reg_rob_reg_name;
+    wire [`dataWidth - 1 : 0] ROB_reg_rob_reg_data;
+    wire [`tagWidth  - 1 : 0] ROB_reg_rob_reg_tag;
+    ROB rob(
+    	clk, rst, exclk,
+    	Decoder_ROB_robEnable,
+    	Decoder_ROB_robData,
+    	Decoder_ROB_tagCheck1,
+    	Decoder_ROB_tagCheck2,
+    	Decoder_ROB_tagCheckd,
+    	Decoder_ROB_ROBtail,
+    	Decoder_ROB_tag1Ready,
+    	Decoder_ROB_tag2Ready,
+    	Decoder_ROB_tagdReady,
+    	Decoder_ROB_robData1,
+    	Decoder_ROB_robData2,
+    	Decoder_ROB_robDatad,
+    	ALUCDB_ROB_valid_ROB,
+    	ALUCDB_ROB_robTagOut,
+    	ALUCDB_ROB_robDataOut,
+    	rob_PC_free,
+    	ROB_reg_regfileEnable,
+    	ROB_reg_rob_reg_name,
+    	ROB_reg_rob_reg_data,
+    	ROB_reg_rob_reg_tag
+    );
 
-	Regfile regfile(
-		clk, rst, 
-		ROB_reg_enable,
-		ROB_reg_name,
-		ROB_reg_data,
-		ROB_reg_tag,
-		ID_reg_enable,
-		ID_reg_tagaddr,
-		ID_reg_tag,
-		ID_reg_addr1,
-		ID_reg_tag1,
-		ID_reg_data1,
-		ID_reg_addr2,
-		ID_reg_tag2,
-		ID_reg_data2,
-		ID_reg_addrd,
-		ID_reg_tagd,
-		ID_reg_datad
-	);
+    Regfile regfile(
+    	clk, rst,
+    	ROB_reg_regfileEnable,
+    	ROB_reg_rob_reg_name,
+    	ROB_reg_rob_reg_data,
+    	ROB_reg_rob_reg_tag,
+    	Decoder_reg_regEnable,
+    	Decoder_reg_regTagAddr,
+    	Decoder_reg_regTag,
+    	Decoder_reg_regAddr1,
+    	Decoder_reg_regTag1,
+    	Decoder_reg_regData1,
+    	Decoder_reg_regAddr2,
+    	Decoder_reg_regTag2,
+    	Decoder_reg_regData2,
+    	Decoder_reg_regAddrd,
+    	Decoder_reg_regTagd,
+    	Decoder_reg_regDatad
+    );
 endmodule

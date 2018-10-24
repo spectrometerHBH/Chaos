@@ -4,7 +4,7 @@
 module multichannel
 	#(
 	parameter PACKET_SIZE = 8,
-	parameter MESSAGE_BIT = 256,
+	parameter MESSAGE_BIT = 72,
 	parameter CHANNEL_BIT = 1,
 	parameter [5*(1<<CHANNEL_BIT)-1:0] CHANNEL_PRIORITY = {(1<<CHANNEL_BIT){5'd8}}
 	)

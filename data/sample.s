@@ -2,16 +2,16 @@
 .global _start
 
 _start:
-	lui x3, 0x80000		# (1) x3 = 0x80000000
-	ori x1, x0, 0x1		# (1) x1 = 0x00000001
-	j s1				# jump to s1
+	lui x3, 0x80000		# (1) x3 = 0x80000000 0
+	ori x1, x0, 0x1		# (1) x1 = 0x00000001 4
+	j s1				# jump to s1 8
 
 1:
-	ori x1, x0, 0x111
-	ori x1, x0, 0x110
+	ori x1, x0, 0x111 # c
+	ori x1, x0, 0x110 # 10
 
 s1:
-	ori x1, x0, 0x002	# (2) x1 = 0x00000002
+	ori x1, x0, 0x002	# (2) x1 = 0x00000002 # 14
 	jal x5, s2			# jump to s2 and set x5 = 0x1c
 
 	ori x1, x0, 0x110

@@ -27,9 +27,7 @@ module ALU_CDB(
     output wire [`dataWidth  - 1 : 0] branchALUDataOut,
     //output to PC
     output wire valid_PC,
-    output wire [`addrWidth  - 1 : 0] PCDataOut,
-    //output to IFetcher
-    output wire jump_complete  
+    output wire [`addrWidth  - 1 : 0] PCDataOut
     /* 
     //output to LSBuffer
     output wire valid_LSBuf,
@@ -56,7 +54,7 @@ module ALU_CDB(
     assign valid_ROB        = aluSignal;
     assign valid_branch     = aluSignal;
     assign valid_PC         = aluSignal && aluPCvalidIn;
-    assign jump_complete    = aluSignal && aluPCvalidIn;
+    //assign jump_complete    = aluSignal && aluPCvalidIn;
 
     assign dataInfo         = aluSignal ? aluDataIn : 0;
     assign tagInfo          = aluSignal ? aluTagIn  : `tagFree;
