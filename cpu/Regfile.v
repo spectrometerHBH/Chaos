@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "defines.v"
+`include "defines.vh"
 
 module Regfile(
     input wire clk,
@@ -27,21 +27,21 @@ module Regfile(
     output reg [`tagWidth  - 1 : 0] tag3,
     output reg [`dataWidth - 1 : 0] data3
 );
-    reg [`dataWidth - 1 : 0] data[`regCnt - 1 : 0];
-    reg [`tagWidth  - 1 : 0] tag[`regCnt  - 1 : 0];
+    reg [`dataWidth - 1 : 0] data[`reg_size - 1 : 0];
+    reg [`tagWidth  - 1 : 0] tag[`reg_size  - 1 : 0];
 
     integer i;
 	always @ (posedge clk or posedge rst) begin
 		if (rst) begin
-			data[0] <= 0;
-			for (i = 0; i < `regCnt; i = i + 1) begin
-				tag[i] <= `tagFree;  
+			for (i = 0; i < `reg_size; i = i + 1) begin
+				data[i] <= 0;
+				tag[i]  <= `tagFree;  
 			end
 		end else begin
 			if (enWrite) begin
 				if (namew) begin
 					data[namew] <= dataw;
-					if (tag[namew] == tagw) begin
+					if (tag[namew] == tagw && tagw != tagDecoderw) begin
 						tag[namew] <= `tagFree;
 					end
 				end
@@ -56,8 +56,8 @@ module Regfile(
 
     always @ (*) begin
 		if (rst) begin
-			data1 <= 0;
-			tag1  <= `tagFree;
+			data1 = 0;
+			tag1  = `tagFree;
 		end else if (enWrite && name1 == namew) begin
 			data1 = dataw;
 			tag1  = tagw;
@@ -69,8 +69,8 @@ module Regfile(
 
 	always @ (*) begin
 		if (rst) begin
-			data2 <= 0;
-			tag2  <= `tagFree;
+			data2 = 0;
+			tag2  = `tagFree;
 		end else if (enWrite && name2 == namew) begin
 			data2 = dataw;
 			tag2  = tagw;
@@ -82,8 +82,8 @@ module Regfile(
 
     always @(*) begin
     	if (rst) begin
-    		data3 <= 0;
-    		tag3  <= `tagFree;
+    		data3 = 0;
+    		tag3  = `tagFree;
     	end else if (enWrite && name3 == namew) begin
  			data3 = dataw;
  			tag3  = tagw;   		

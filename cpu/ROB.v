@@ -1,160 +1,83 @@
 `timescale 1ns/1ps
 
-`include "defines.v"
+`include "defines.vh"
 
 module ROB(
     input wire clk,
     input wire rst,
-    input wire exclk,
     //input from Decoder
-    input wire robInsertEnable,
-    input wire [`robWidth - 1 : 0] instToInsert,
-    input wire [`tagWidth - 1 : 0] tagCheck1,
-    input wire [`tagWidth - 1 : 0] tagCheck2,
-    input wire [`tagWidth - 1 : 0] tagCheckd,
-    //output to Decoder
-    output wire [`tagWidth - 2  : 0] tailptr,
-    output reg  tag1Ready,
-    output reg  tag2Ready,
-    output reg  tagdReady,
-    output reg  [`dataWidth - 1 : 0] data1,
-    output reg  [`dataWidth - 1 : 0] data2,
-    output reg  [`dataWidth - 1 : 0] datad,
-    //input from ALUCDB
-    input wire ALU_ROB_valid,
-    input wire [`tagWidth  - 1 : 0] ALU_CDB_tag,
-    input wire [`dataWidth - 1 : 0] ALU_CDB_data,
-    
-    /*
-    //input from branchCDB
-    input wire branch_ROB_valid,
-    input wire [`tagWidth  - 1 : 0] branch_CDB_tag,
-    input wire [`dataWidth - 1 : 0] branch_CDB_data,
-    //input from LSBufCDB
-    input wire LSBuf_ROB_valid,
-    input wire [`tagWidth  - 1 : 0] LSBuf_CDB_tag,
-    input wire [`dataWidth - 1 : 0] LSBuf_CDB_data, 
-    */
+    input wire [`tagWidth - 1 : 0] decoder_tag1,
+    input wire [`tagWidth - 1 : 0] decoder_tag2,
+    input wire [`tagWidth - 1 : 0] decoder_tagd,
+    input wire alloc_en,
+    input wire [`regWidth - 1 : 0] alloc_data,
+    //output to decoder 
+    output reg [`rob_sel - 1 : 0] alloc_ptr,
+    output wire decoder_tag1ready,
+    output wire decoder_tag2ready,
+    output wire decoder_tagdready,
+    output wire [`dataWidth - 1 : 0] decoder_tag1data,
+    output wire [`dataWidth - 1 : 0] decoder_tag2data,
+    output wire [`dataWidth - 1 : 0] decoder_tagddata,
+    //output to regfile
+    output wire com_en,
+    output wire [`regWidth - 1 : 0] com_addr,
+    output wire [`dataWidth - 1 : 0] com_data,
+    output wire [`tagWidth - 1 : 0] com_tag,
+    //input from ex_alu
+    input wire alu_rst_en,
+    input wire [`dataWidth - 1 : 0] alu_rst_data,
+    input wire [`tagWidth - 1 : 0] alu_rst_tag,
     //output to PC
-    output wire freeState,
-    //output to Regfile
-    output reg regfileEnable,
-    output reg [`regWidth  - 1 : 0] rob_reg_name,
-    output reg [`dataWidth - 1 : 0] rob_reg_data,
-    output reg [`tagWidth  - 1 : 0] rob_reg_tag
+    output wire rob_free
 );
-    //{Complete, Ready, Data, Addr, Op}
-    reg  [`robWidth - 1 : 0] rob[`ROBsize - 1 : 0];
-    reg  [`tagWidth - 2 : 0] frontPointer, tailPointer;
-    reg  [`tagWidth - 1 : 0] counter;
-    wire [`robWidth - 1 : 0] head;
-    wire [`tagWidth - 2 : 0] ALU_CDB_robNumber, branch_CDB_robNumber, LSBuf_CDB_robNumber;
-    wire headFinish, headReady;
-
-    assign head                 = rob[frontPointer];
-    assign headFinish           = (counter != 0 && rob[frontPointer][`robCompleteRange]) ? 1 : 0;
-    assign headReady            = (counter != 0 && rob[frontPointer][`robReadyRange])    ? 1 : 0;
-    assign freeState            = (counter < `ROBsize) ? 1 : 0;
-    //assign freeState            = 1;
-    assign tailptr              = tailPointer;
-    assign ALU_CDB_robNumber    = ALU_CDB_tag   [`tagWidth - 2 : 0];
-    //assign branch_CDB_robNumber = branch_CDB_tag[`tagWidth - 2 : 0];
-    //assign LSBuf_CDB_robNumber  = LSBuf_CDB_rag [`tagWidth - 2 : 0];
+    reg [`dataWidth - 1 : 0] data[`rob_size - 1 : 0];
+    reg [`rob_size - 1 : 0]  valid;
+    reg [`regWidth - 1 : 0]  dest[`rob_size - 1 : 0]; 
+    reg [`rob_sel - 1 : 0] com_ptr;
+    reg [`rob_sel : 0] ent_cnt;
     
-    //Decoder Tag Check
-    always @ (*) begin
-        case (tagCheck1) 
-            `tagFree : begin
-                tag1Ready = 1;
-                data1 = {(`dataWidth - 1){1'b0}};
-            end
-            ALU_CDB_tag : begin
-                tag1Ready = 1;
-                data1 = ALU_CDB_data;
-            end/*
-            LSBuf_CDB_tag : begin
-                tag1Ready = 1;
-                data1 = LSBuf_CDB_data;
-            end*/
-            default : begin
-                tag1Ready = rob[tagCheck1][`robReadyRange];
-                data1 = rob[tagCheck1][`robDataRange];
-            end
-        endcase
-        case (tagCheck2) 
-            `tagFree : begin
-                tag2Ready = 1;
-                data2 = {(`dataWidth - 1){1'b0}};
-            end
-            ALU_CDB_tag : begin
-                tag2Ready = 1;
-                data2 = ALU_CDB_data;
-            end/*
-            LSBuf_CDB_tag : begin
-                tag2Ready = 1;
-                data2 = LSBuf_CDB_data;
-            end*/
-            default : begin
-                tag2Ready = rob[tagCheck2][`robReadyRange];
-                data2 = rob[tagCheck2][`robDataRange];
-            end
-        endcase
-        case (tagCheckd)
-            `tagFree : begin
-                tagdReady = 1;
-                datad = {(`dataWidth - 1){1'b0}};
-            end
-            ALU_CDB_tag : begin
-                tagdReady = 1;
-                datad = ALU_CDB_data;
-            end
-            default : begin
-                tagdReady = rob[tagCheckd][`robReadyRange];
-                datad = rob[tagCheckd][`robDataRange];
-            end
-        endcase
-    end
-
-    integer i;
-    always @ (posedge exclk or posedge rst) begin
+    assign decoder_tag1ready = decoder_tag1 == `tagFree ? 1 : valid[decoder_tag1[2 : 0]];
+    assign decoder_tag2ready = decoder_tag2 == `tagFree ? 1 : valid[decoder_tag2[2 : 0]];
+    assign decoder_tagdready = decoder_tagd == `tagFree ? 1 : valid[decoder_tagd[2 : 0]];
+    assign decoder_tag1data  = data[decoder_tag1[2 : 0]];
+    assign decoder_tag2data  = data[decoder_tag2[2 : 0]];
+    assign decoder_tagddata  = data[decoder_tagd[2 : 0]];
+    
+    assign com_en   = valid[com_ptr];
+    assign com_addr = dest[com_ptr];
+    assign com_data = data[com_ptr];
+    assign com_tag  = com_ptr;
+    assign rob_free = ent_cnt < `rob_size ? 1 : 0;
+    
+    always @ (posedge clk or posedge rst) begin
         if (rst) begin
-            frontPointer <= 1'b0;
-            tailPointer  <= 1'b0;
-            counter      <= 1'b0;
-            for (i = 0; i < `ROBsize; i = i + 1)
-                rob[i] <= `ROBsize'b0;
-        end else if (clk) begin
-            //Kick front
-            if (headFinish) begin
-                counter <= counter - 1;
-                rob[frontPointer] <= {(`robWidth){1'b0}};
-                frontPointer <= frontPointer + 1;
-            end
-            //Insert inst
-            if (freeState) begin
-                if (robInsertEnable) begin
-                    counter <= counter + 1;
-                    rob[tailPointer] <= instToInsert;
-                    tailPointer <= tailPointer + 1; 
-                end
-            end
+            ent_cnt <= 0;
+            com_ptr  <= 0;
+            alloc_ptr <= 0;
+            valid <= 0;
         end else begin
-            if (ALU_ROB_valid) begin
-                rob[ALU_CDB_robNumber][`robDataRange] <= ALU_CDB_data;
-                rob[ALU_CDB_robNumber][`robReadyRange] <= 1;
+            if (alu_rst_en) begin
+                data[alu_rst_tag[2 : 0]] <= alu_rst_data;
+                valid[alu_rst_tag[2 : 0]] <= 1;
             end
-            regfileEnable <= 0;
-            if (counter && headReady) begin
-                case (head[`robOpRange])
-                    `robClassNormal: begin
-                        regfileEnable <= 1;
-                        rob_reg_name <= head[`robRegRange];
-                        rob_reg_data <= head[`robDataRange];
-                        rob_reg_tag  <= frontPointer;  
-                        rob[frontPointer][`robCompleteRange] <= 1;
-                    end
-                    default : ;
-                endcase  
+            if (alloc_en && com_en) begin
+                data[alloc_ptr] <= 0;
+                valid[alloc_ptr] <= 0;
+                valid[com_ptr] <= 0;
+                dest[alloc_ptr] <= alloc_data;
+                alloc_ptr <= alloc_ptr + 1;
+                com_ptr <= com_ptr + 1;
+            end else if (alloc_en) begin
+                data[alloc_ptr] <= 0;
+                valid[alloc_ptr] <= 0;
+                dest[alloc_ptr] <= alloc_data;
+                alloc_ptr <= alloc_ptr + 1;
+                ent_cnt <= ent_cnt + 1;
+            end else if (com_en) begin
+                valid[com_ptr] <= 0;
+                com_ptr <= com_ptr + 1;
+                ent_cnt <= ent_cnt - 1;
             end
         end
     end

@@ -1,164 +1,129 @@
 `timescale 1ns/1ps
 
-`include "defines.v"
+`include "defines.vh"
 
 module PC(
-    (*mark_debug = "true"*)input wire clk, 
-    (*mark_debug = "true"*)input wire rst,
-    //output to IF/ID
-    output reg  PC_IFID_enable,
-    output reg [`addrWidth - 1 : 0] PC_IFID,
-    output reg [`instWidth - 1 : 0] inst_IFID,
-    //input from ALU_CDB
+    input wire clk, 
+    input wire rst,
+    //output to Decoder
+    output reg Decoder_enable,
+    output reg [`addrWidth - 1 : 0] PC_Decoder,
+    output reg [`instWidth - 1 : 0] inst_Decoder,
+    //input from alu
     input wire jump_dest_valid,
     input wire [`addrWidth  - 1 : 0] jump_dest,
-    //input from branchALU_CDB
+    //input from branch
     input wire branch_offset_valid,
     input wire [`addrWidth  - 1 : 0] branch_offset,
-    //output to ICache
-    (*mark_debug = "true"*)output reg [1 : 0] rw_flag,             //[0] for read, [1] for write, both zero for stall
-    (*mark_debug = "true"*)output reg [`addrWidth - 1 : 0] PC,
-    output wire [`dataWidth - 1: 0] write_data, //useless
-    output wire [3 : 0] write_mask,          //useless  
-    //input from ICache
-    (*mark_debug = "true"*)input  wire [`instWidth - 1: 0] read_data,
-    (*mark_debug = "true"*)input  wire ICache_busy,
-    (*mark_debug = "true"*)input  wire ICache_done,
-    //input from RS & ROB
+    //output to mem_ctrl
+    output reg [1 : 0] rw_flag,                 //[0] for read, [1] for write, both zero for stall
+    output reg [`addrWidth - 1 : 0] PC,
+    output wire [1 : 0] len, 
+    //input from mem_ctrl
+    input  wire [`instWidth - 1: 0] read_data,
+    input  wire mem_busy,
+    input  wire mem_done,
+    //input from rs_alu & ROB
     input  wire alu_free,
     input  wire rob_free
 );
-    localparam STATE_IDLE   = 3'b00;
-    localparam STATE_OnRecv = 3'b01;
+    localparam STATE_IDLE   = 2'b00;
+    localparam STATE_OnRecv = 2'b01;
     localparam STATE_OnJump = 2'b10;
-    localparam STATE_OnFull = 2'b11;
 
     reg [`addrWidth - 1 : 0] next_PC;
-    (*mark_debug = "true"*)reg [1 : 0]              PC_state;
-    wire jump;
-    reg branch_finish;    
-    assign jump = read_data[`classOpRange] == `classBranch || 
-                  read_data[`classOpRange] == `classAUIPC  ||
-                  read_data[`classOpRange] == `classJAL    ||
-                  read_data[`classOpRange] == `classJALR   ? 1 : 0;
-
-    always @(negedge clk) begin
-        if (rst) begin
-            next_PC        <= 0;
-            branch_finish  <= 0;
-        end else begin
-            branch_finish <= 0;
-            case (PC_state)
-                STATE_OnJump : begin
-                    if (jump_dest_valid) begin
-                        next_PC <= jump_dest;
-                        branch_finish <= 1;
-                    end else if (branch_offset_valid) begin
-                        next_PC <= PC + branch_offset;
-                        branch_finish <= 1;
-                    end else next_PC <= PC;
-                end
-                default : begin
-                    next_PC <= PC;
-                end
-            endcase
-        end
-    end
+    reg [1 : 0]              PC_state;
+    wire jump, stall;
+    
+    assign len   = 2'b11;
+    assign stall = ~(alu_free & rob_free);    
+    assign jump  = read_data[`classOpRange] == `classBranch || 
+                   read_data[`classOpRange] == `classAUIPC  ||
+                   read_data[`classOpRange] == `classJAL    ||
+                   read_data[`classOpRange] == `classJALR   ? 1 : 0;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            PC_state       <= STATE_IDLE;
-            PC             <= 0;
-            PC_IFID_enable <= 0;
-            PC_IFID        <= 0;
-            inst_IFID      <= 0;
-            rw_flag        <= 0;
+            PC <= 0;
+            next_PC <= 0;
+            rw_flag <= 0;
+            Decoder_enable <= 0;
+            PC_Decoder <= 0;
+            inst_Decoder <= 0; 
+            PC_state <= STATE_IDLE;
         end else begin
+            rw_flag <= 0;
+            Decoder_enable <= 0;
+            PC_Decoder   <= PC;
+            inst_Decoder <= 0;
             case (PC_state)
                 STATE_IDLE : begin
-                    if (alu_free && rob_free) begin
-                        // no fetching | no branching | free
-                        rw_flag        <= 1;
-                        PC_IFID_enable <= 0;
-                        PC_state       <= STATE_OnRecv;
-                        PC             <= PC;
+                    if (!stall && !mem_busy) begin
+                        rw_flag <= 1;
+                        next_PC <= next_PC + 4;
+                        PC_state <= STATE_OnRecv; 
+                        PC <= next_PC;
                     end else begin
-                        // no fetching | no branching | full
-                        rw_flag        <= 0;
-                        PC_IFID_enable <= 0;
-                        PC_state       <= STATE_OnFull;
-                        PC             <= PC;
+                        next_PC <= next_PC;
+                        PC_state <= STATE_IDLE;
+                        PC <= next_PC;
                     end
                 end
                 STATE_OnRecv : begin
-                    if (ICache_done) begin
-                        PC_IFID_enable <= 1;
-                        PC_IFID        <= PC;
-                        inst_IFID      <= read_data;  
+                    if (mem_done) begin
+                        Decoder_enable <= 1;
+                        inst_Decoder <= read_data;
+                        PC_Decoder   <= PC;
                         if (jump) begin
-                            // fetch finish and is jump instr
-                            rw_flag  <= 0;
+                            next_PC <= next_PC;
                             PC_state <= STATE_OnJump;
-                            PC       <= PC;    
-                        end else if (alu_free && rob_free) begin
-                            // fetch finish and not jump instr and free
-                            rw_flag  <= 1;
-                            PC_state <= STATE_OnRecv;
-                            PC       <= PC + 4;
+                            PC <= PC;                                    
                         end else begin
-                            // fetch finish and not jump instr and not free (impossible)
-                            rw_flag <= 0;
-                            PC_state <= STATE_IDLE;
-                            PC       <= PC + 4;
+                            if (!stall) begin
+                                rw_flag <= 1;
+                                next_PC <= next_PC + 4;
+                                PC_state <= STATE_OnRecv;
+                                PC <= next_PC;
+                            end else begin
+                                next_PC <= next_PC;
+                                PC_state <= STATE_IDLE;
+                                PC <= next_PC;
+                            end
                         end
                     end else begin
-                        //fetch waiting
-                        PC_IFID_enable <= 0;
-                        rw_flag        <= 0;
-                        PC_state       <= STATE_OnRecv;
-                        PC             <= PC; 
+                        next_PC <= next_PC;
+                        PC_state <= STATE_OnRecv;
+                        PC <= PC;
                     end
                 end
                 STATE_OnJump : begin
-                    if (branch_finish) begin
-                        //Jump finish
-                        if (alu_free && rob_free) begin
-                            //free
-                            PC_IFID_enable <= 0;
-                            rw_flag        <= 1;
-                            PC_state       <= STATE_OnRecv;
-                            PC <= next_PC;
+                    if (jump_dest_valid) begin
+                        PC <= jump_dest;
+                        if (!stall) begin
+                            rw_flag <= 1;
+                            next_PC <= jump_dest + 4;
+                            PC_state <= STATE_OnRecv;                                
                         end else begin
-                            //not free
-                            PC_IFID_enable <= 0;
-                            rw_flag        <= 0;
-                            PC_state       <= STATE_OnFull;  
-                            PC <= next_PC;
+                            next_PC <= jump_dest;
+                            PC_state <= STATE_IDLE;
+                        end
+                    end else if (branch_offset_valid) begin
+                        PC <= PC + branch_offset;
+                        if (!stall) begin
+                            rw_flag <= 1;
+                            next_PC <= PC + branch_offset + 4;
+                            PC_state <= STATE_OnRecv;    
+                        end else begin
+                            next_PC <= PC + branch_offset;
+                            PC_state <= STATE_IDLE;
                         end
                     end else begin
-                        //Jump waiting
-                        PC_IFID_enable <= 0;
-                        rw_flag        <= 0;
-                        PC_state       <= STATE_OnJump;
-                        PC             <= PC; 
-                    end
-                end
-                STATE_OnFull : begin
-                    if (alu_free && rob_free) begin
-                        PC_IFID_enable <= 0;
-                        rw_flag        <= 1;
-                        PC_state       <= STATE_OnRecv;
-                        PC             <= PC;
-                    end else begin
-                        PC_IFID_enable <= 0;
-                        rw_flag        <= 1;
-                        PC_state       <= STATE_OnFull;
-                        PC             <= PC; 
-                    end
+                        PC      <= PC;
+                        next_PC <= next_PC;
+                        PC_state <= STATE_OnJump;
+                    end 
                 end
             endcase
-            //rw_flag <= 1;
         end
     end
-
 endmodule
