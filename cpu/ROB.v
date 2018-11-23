@@ -28,6 +28,10 @@ module ROB(
     input wire alu_rst_en,
     input wire [`dataWidth - 1 : 0] alu_rst_data,
     input wire [`tagWidth - 1 : 0] alu_rst_tag,
+    //input from ex_ls
+    input wire mem_rst_en,
+    input wire [`dataWidth - 1 : 0] mem_rst_data,
+    input wire [`tagWidth - 1 : 0] mem_rst_tag,
     //output to PC
     output wire rob_free
 );
@@ -37,12 +41,21 @@ module ROB(
     reg [`rob_sel - 1 : 0] com_ptr;
     reg [`rob_sel : 0] ent_cnt;
     
-    assign decoder_tag1ready = decoder_tag1 == `tagFree ? 1 : valid[decoder_tag1[2 : 0]];
-    assign decoder_tag2ready = decoder_tag2 == `tagFree ? 1 : valid[decoder_tag2[2 : 0]];
-    assign decoder_tagdready = decoder_tagd == `tagFree ? 1 : valid[decoder_tagd[2 : 0]];
-    assign decoder_tag1data  = data[decoder_tag1[2 : 0]];
-    assign decoder_tag2data  = data[decoder_tag2[2 : 0]];
-    assign decoder_tagddata  = data[decoder_tagd[2 : 0]];
+    assign decoder_tag1ready = decoder_tag1 == `tagFree ? 1 : 
+                               alu_rst_en && alu_rst_tag == decoder_tag1 ? 1 : 
+                               mem_rst_en && mem_rst_tag == decoder_tag1 ? 1 : valid[decoder_tag1[2 : 0]];
+    assign decoder_tag2ready = decoder_tag2 == `tagFree ? 1 :                              
+                               alu_rst_en && alu_rst_tag == decoder_tag2 ? 1 : 
+                               mem_rst_en && mem_rst_tag == decoder_tag2 ? 1 : valid[decoder_tag2[2 : 0]];
+    assign decoder_tagdready = decoder_tagd == `tagFree ? 1 : 
+                               alu_rst_en && alu_rst_tag == decoder_tagd ? 1 : 
+                               mem_rst_en && mem_rst_tag == decoder_tagd ? 1 : valid[decoder_tagd[2 : 0]];
+    assign decoder_tag1data  = alu_rst_en && alu_rst_tag == decoder_tag1 ? alu_rst_data : 
+                               mem_rst_en && mem_rst_tag == decoder_tag1 ? mem_rst_data : data[decoder_tag1[2 : 0]];
+    assign decoder_tag2data  = alu_rst_en && alu_rst_tag == decoder_tag2 ? alu_rst_data : 
+                               mem_rst_en && mem_rst_tag == decoder_tag2 ? mem_rst_data : data[decoder_tag2[2 : 0]];
+    assign decoder_tagddata  = alu_rst_en && alu_rst_tag == decoder_tagd ? alu_rst_data : 
+                               mem_rst_en && mem_rst_tag == decoder_tagd ? mem_rst_data : data[decoder_tagd[2 : 0]];
     
     assign com_en   = valid[com_ptr];
     assign com_addr = dest[com_ptr];
@@ -60,6 +73,10 @@ module ROB(
             if (alu_rst_en) begin
                 data[alu_rst_tag[2 : 0]] <= alu_rst_data;
                 valid[alu_rst_tag[2 : 0]] <= 1;
+            end
+            if (mem_rst_en) begin
+                data[mem_rst_tag[2 : 0]] <= mem_rst_data;
+                valid[mem_rst_tag[2 : 0]] <= 1;
             end
             if (alloc_en && com_en) begin
                 data[alloc_ptr] <= 0;

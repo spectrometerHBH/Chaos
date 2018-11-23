@@ -2,7 +2,7 @@
 
 `include "defines.vh"
 
-module allocater_issuer(
+module allocater_issuer_alu(
     input wire [`rs_alu_size - 1 : 0] busy,
     input wire [`rs_alu_size - 1 : 0] ready,
     output reg allocate_en,
@@ -41,11 +41,16 @@ module source_oprand_manager(
     input wire ex_rst1_en,
     input wire [`tagWidth - 1 : 0] ex_rst1_tag,
     input wire [`dataWidth - 1 : 0] ex_rst1_data,
+    input wire ex_rst2_en,
+    input wire [`tagWidth - 1 : 0] ex_rst2_tag,
+    input wire [`dataWidth - 1 : 0] ex_rst2_data, 
     output wire [`dataWidth - 1 : 0] next_data,
     output wire [`tagWidth - 1 : 0] next_tag
 );
-    assign next_data = (ex_rst1_en && ex_rst1_tag == tag) ? ex_rst1_data : data;
-    assign next_tag  = (ex_rst1_en && ex_rst1_tag == tag) ? `tagFree : tag;
+    assign next_data = (ex_rst1_en && ex_rst1_tag == tag) ? ex_rst1_data : 
+                       (ex_rst2_en && ex_rst2_tag == tag) ? ex_rst2_data : data;
+    assign next_tag  = (ex_rst1_en && ex_rst1_tag == tag) ? `tagFree : 
+                       (ex_rst2_en && ex_rst2_tag == tag) ? `tagFree : tag;
 endmodule
 
 module rs_alu_ent(
@@ -60,6 +65,10 @@ module rs_alu_ent(
     input wire en_alu_rst,
     input wire [`tagWidth - 1 : 0] alu_rst_tag,
     input wire [`dataWidth - 1 : 0] alu_rst_data,
+    //input from ex_ls
+    input wire en_mem_rst,
+    input wire [`tagWidth - 1 : 0] mem_rst_tag,
+    input wire [`dataWidth - 1 : 0] mem_rst_data,
     //output to ex_alu
     output wire [`dataWidth - 1 : 0] ex_src1,
     output wire [`dataWidth - 1 : 0] ex_src2,
@@ -82,7 +91,7 @@ module rs_alu_ent(
     assign ex_pc   = PC;
     assign ex_aluop = op;
     assign ex_dest  = dest;
-    assign ready = busy && (tag1 == `tagFree) && (tag2 == `tagFree) ? 1 : 0;
+    assign ready = busy && (next_tag1 == `tagFree) && (next_tag2 == `tagFree) ? 1 : 0;
     
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
@@ -117,6 +126,9 @@ module rs_alu_ent(
         .ex_rst1_en(en_alu_rst),
         .ex_rst1_tag(alu_rst_tag),
         .ex_rst1_data(alu_rst_data),
+        .ex_rst2_en(en_mem_rst),
+        .ex_rst2_tag(mem_rst_tag),
+        .ex_rst2_data(mem_rst_data),
         .next_data(next_data1),
         .next_tag(next_tag1)
     );
@@ -127,6 +139,9 @@ module rs_alu_ent(
         .ex_rst1_en(en_alu_rst),
         .ex_rst1_tag(alu_rst_tag),
         .ex_rst1_data(alu_rst_data),
+        .ex_rst2_en(en_mem_rst),
+        .ex_rst2_tag(mem_rst_tag),
+        .ex_rst2_data(mem_rst_data),
         .next_data(next_data2),
         .next_tag(next_tag2)
     );
@@ -144,6 +159,10 @@ module rs_alu(
     input wire en_alu_rst,
     input wire [`tagWidth - 1 : 0] alu_rst_tag,
     input wire [`dataWidth - 1 : 0] alu_rst_data,
+    //input from ex_ls
+    input wire en_mem_rst,
+    input wire [`tagWidth - 1 : 0] mem_rst_tag,
+    input wire [`dataWidth - 1 : 0] mem_rst_data,
     //output to ex_alu
     output reg ex_alu_en,
     output reg [`dataWidth - 1 : 0] exsrc1_out,
@@ -166,7 +185,7 @@ module rs_alu(
     
     assign rs_alu_free = allocate_en;
     
-    allocater_issuer aoko(
+    allocater_issuer_alu aoko_alu(
         .busy(busy),
         .ready(ready),
         .allocate_en(allocate_en),
@@ -197,6 +216,9 @@ module rs_alu(
                 .en_alu_rst(en_alu_rst),
                 .alu_rst_tag(alu_rst_tag),
                 .alu_rst_data(alu_rst_data),
+                .en_mem_rst(en_mem_rst),
+                .mem_rst_tag(mem_rst_tag),
+                .mem_rst_data(mem_rst_data),
                 .ex_src1(exsrc1[i]),
                 .ex_src2(exsrc2[i]),
                 .ex_pc(expc[i]),

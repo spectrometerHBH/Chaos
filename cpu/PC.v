@@ -13,8 +13,8 @@ module PC(
     input wire jump_dest_valid,
     input wire [`addrWidth  - 1 : 0] jump_dest,
     //input from branch
-    input wire branch_offset_valid,
-    input wire [`addrWidth  - 1 : 0] branch_offset,
+    input wire branch_dest_valid,
+    input wire [`addrWidth  - 1 : 0] branch_dest,
     //output to mem_ctrl
     output reg [1 : 0] rw_flag,                 //[0] for read, [1] for write, both zero for stall
     output reg [`addrWidth - 1 : 0] PC,
@@ -25,6 +25,7 @@ module PC(
     input  wire mem_done,
     //input from rs_alu & ROB
     input  wire alu_free,
+    input  wire ls_free,
     input  wire rob_free
 );
     localparam STATE_IDLE   = 2'b00;
@@ -36,7 +37,7 @@ module PC(
     wire jump, stall;
     
     assign len   = 2'b11;
-    assign stall = ~(alu_free & rob_free);    
+    assign stall = ~(alu_free & rob_free & ls_free);    
     assign jump  = read_data[`classOpRange] == `classBranch || 
                    read_data[`classOpRange] == `classAUIPC  ||
                    read_data[`classOpRange] == `classJAL    ||
@@ -107,14 +108,14 @@ module PC(
                             next_PC <= jump_dest;
                             PC_state <= STATE_IDLE;
                         end
-                    end else if (branch_offset_valid) begin
-                        PC <= PC + branch_offset;
+                    end else if (branch_dest_valid) begin
+                        PC <= branch_dest;
                         if (!stall) begin
                             rw_flag <= 1;
-                            next_PC <= PC + branch_offset + 4;
+                            next_PC <= branch_dest + 4;
                             PC_state <= STATE_OnRecv;    
                         end else begin
-                            next_PC <= PC + branch_offset;
+                            next_PC <= branch_dest;
                             PC_state <= STATE_IDLE;
                         end
                     end else begin

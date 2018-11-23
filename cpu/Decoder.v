@@ -12,10 +12,14 @@ module Decoder(
     //output to ALU
     output reg  aluEnable,
     output reg  [`aluWidth - 1 : 0] aluData,
-    output wire [`addrWidth - 1 : 0] inst_PC_out,
+    output wire [`addrWidth - 1 : 0] inst_PC_out_alu,
     //output to branch
-    output reg branchALUEnable,
-    output reg [`branchALUWidth - 1 : 0] branchALUData,
+    output reg branchEnable,
+    output reg [`branchWidth - 1 : 0] branchData,
+    output wire [`addrWidth - 1 : 0] inst_PC_out_branch,
+    //output to ls
+    output reg lsEnable,
+    output reg [`lsWidth - 1 : 0 ] lsData,
     //input from ROB
     input wire tag1Ready,
     input wire tag2Ready,
@@ -75,8 +79,9 @@ module Decoder(
     assign data2 = (regTag2 == `tagFree) ? regData2 : robData2;
     assign tagd  = (regTagd == `tagFree || tagdReady) ? `tagFree : regTagd;
     assign datad = (regTagd == `tagFree) ? regDatad : robDatad;
-    assign inst_PC_out = inst_PC;
-   
+    assign inst_PC_out_alu = inst_PC;
+    assign inst_PC_out_branch = inst_PC;
+    
     always @ (*) begin
         newop = `NOP;
         if (instToDecode == `nopinstr) begin
@@ -157,30 +162,38 @@ module Decoder(
     wire [`addrWidth - 1 : 0] JImm;
     assign JImm = {{(`addrWidth - 21){instToDecode[31]}}, instToDecode[19:12], instToDecode[20], instToDecode[30:21], 1'b0};
 
-    //branchALU
+    //branch
     wire [`addrWidth - 1 : 0] BImm;
     assign BImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[7], instToDecode[30:25], instToDecode[11:8], 1'b0}; 
+    
+    //save
+    wire [`addrWidth - 1 : 0] SImm;
+    assign SImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[31:25], instToDecode[11:7]};
     
     //generate request to rs, rob & reg
     always @ (*) begin
         if (rst) begin
             aluEnable       = 0;
             robEnable       = 0;
+            lsEnable        = 0;
             regEnable       = 0;
-            branchALUEnable = 0;
+            branchEnable    = 0;
             aluData         = 0;
             robData         = 0;
-            branchALUData   = 0;
+            lsData          = 0; 
+            branchData      = 0;
             regTagAddr      = 0;
             regTag          = `tagFree;
         end begin
             aluEnable       = 0;
             robEnable       = 0;
+            lsEnable        = 0;
             regEnable       = 0;
-            branchALUEnable = 0;
+            branchEnable    = 0;
             aluData         = 0;
             robData         = 0;
-            branchALUData   = 0;
+            branchData      = 0;
+            lsData          = 0;
             regTagAddr      = 0;
             regTag          = `tagFree;
             if (decoderEnable) begin
@@ -252,32 +265,29 @@ module Decoder(
                         regTag = {1'b0, ROBtail};
                     end
                     `classBranch : begin
-                        branchALUEnable = 1;
-                        branchALUData = {
+                        branchEnable = 1;
+                        branchData = {
                             BImm, tag2, data2, tag1, data1, newop
                         };
-                    end/*
+                    end
                     `classLoad : begin
-                        aluEnable = 1;
+                        lsEnable = 1;
                         robEnable = 1;
                         regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
+                        lsData = {
+                            ROBtail, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag2, data2, tag1, data1, newop
                         };
-                        robData = {
-                            2'b0, {`dataWidth{1'b0}}, {{(`addrWidth-`regWidth){1'b0}}, rd}, robClass
-                        };
+                        robData = rd;
                         regTagAddr = rd;
                         regTag = {1'b0, ROBtail};
                     end
                     `classSave : begin
-                        aluEnable = 1;
-                        robEnable = 1;
+                        lsEnable = 1;
                         regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {{}}, tag2, data2     
-                        }
-                    end*/
+                        lsData = {
+                            3'b0, SImm, tag2, data2, tag1, data1, newop     
+                        };
+                    end
                     default : ;
                endcase
             end

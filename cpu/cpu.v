@@ -59,10 +59,11 @@ module cpu(
     wire [`instWidth - 1 : 0] if_dec_inst;
     wire                      alu_if_jump_dest_valid;
     wire [`addrWidth - 1 : 0] alu_if_jump_dest;
-    wire                      branch_if_branch_offset_valid;
-    wire [`addrWidth - 1 : 0] branch_if_branch_offset;
+    wire                      branch_if_branch_dest_valid;
+    wire [`addrWidth - 1 : 0] branch_if_branch_dest;
     wire                      alu_if_alu_free;
     wire                      rob_if_rob_free;
+    wire                      ls_if_ls_free;
     
     PC fetcher(
         .clk(clk),
@@ -72,8 +73,8 @@ module cpu(
         .inst_Decoder(if_dec_inst),
         .jump_dest_valid(alu_if_jump_dest_valid),
         .jump_dest(alu_if_jump_dest),
-        .branch_offset_valid(branch_if_branch_offset_valid),
-        .branch_offset(branch_if_branch_offset),
+        .branch_dest_valid(branch_if_branch_dest_valid),
+        .branch_dest(branch_if_branch_dest),
         .rw_flag(core_mcu_rw_flag[0]),
         .PC(core_mcu_addr[0]),
         .len(core_mcu_len[0]),
@@ -81,6 +82,7 @@ module cpu(
         .mem_busy(mcu_core_busy[0]),
         .mem_done(mcu_core_done[0]),
         .alu_free(alu_if_alu_free),
+        .ls_free(ls_if_ls_free),
         .rob_free(rob_if_rob_free)
     );
     
@@ -88,7 +90,10 @@ module cpu(
     wire [`aluWidth - 1 : 0]  dec_alu_data;
     wire [`addrWidth - 1 : 0] dec_alu_inst_pc;
     wire                      dec_branch_en;
-    wire [`branchALUWidth - 1 : 0] dec_branch_data;
+    wire [`branchWidth - 1 : 0] dec_branch_data;
+    wire [`addrWidth - 1 : 0] dec_branch_inst_pc;
+    wire                      dec_ls_en;
+    wire [`lsWidth - 1 : 0]   dec_ls_data;
     wire                      rob_dec_tag1ready;
     wire                      rob_dec_tag2ready;
     wire                      rob_dec_tagdready;
@@ -122,9 +127,12 @@ module cpu(
         .inst_PC(if_dec_pc),
         .aluEnable(dec_alu_en),
         .aluData(dec_alu_data),
-        .inst_PC_out(dec_alu_inst_pc),
-        .branchALUEnable(dec_branch_en),
-        .branchALUData(dec_branch_data),
+        .inst_PC_out_alu(dec_alu_inst_pc),
+        .branchEnable(dec_branch_en),
+        .branchData(dec_branch_data),
+        .inst_PC_out_branch(dec_branch_inst_pc),
+        .lsEnable(dec_ls_en),
+        .lsData(dec_ls_data),
         .tag1Ready(rob_dec_tag1ready),
         .tag2Ready(rob_dec_tag2ready),
         .tagdReady(rob_dec_tagdready),
@@ -154,6 +162,9 @@ module cpu(
     wire ex_alu_en;
     wire [`tagWidth - 1 : 0] ex_alu_rst_tag;
     wire [`dataWidth - 1 : 0] ex_alu_rst_data;
+    wire ex_mem_en;
+    wire [`tagWidth - 1 : 0] ex_mem_rst_tag;
+    wire [`dataWidth - 1 : 0] ex_mem_rst_data;
     
     wire alu_ex_en;
     wire [`dataWidth - 1 : 0] alu_exsrc1;
@@ -171,6 +182,9 @@ module cpu(
         .en_alu_rst(ex_alu_en),
         .alu_rst_tag(ex_alu_rst_tag),
         .alu_rst_data(ex_alu_rst_data),
+        .en_mem_rst(ex_mem_en),
+        .mem_rst_tag(ex_mem_rst_tag),
+        .mem_rst_data(ex_mem_rst_data),
         .ex_alu_en(alu_ex_en),
         .exsrc1_out(alu_exsrc1),
         .exsrc2_out(alu_exsrc2),
@@ -192,6 +206,94 @@ module cpu(
         .rst_tag(ex_alu_rst_tag),
         .jump_dest_valid(alu_if_jump_dest_valid),
         .jump_dest(alu_if_jump_dest)
+    );
+    
+    wire branch_ex_en;
+    wire [`dataWidth - 1 : 0] branch_exsrc1;
+    wire [`dataWidth - 1 : 0] branch_exsrc2;
+    wire [`addrWidth - 1 : 0] branch_expc;
+    wire [`newopWidth - 1 : 0] branch_exaluop;
+    wire [`addrWidth - 1 : 0]  branch_exoffset;
+    
+    rs_branch rs_branch(
+        .clk(clk),
+        .rst(rst),
+        .alloc_enable(dec_branch_en),
+        .decoder_data(dec_branch_data),
+        .inst_PC(dec_branch_inst_pc),
+        .en_alu_rst(ex_alu_en),
+        .alu_rst_tag(ex_alu_rst_tag),
+        .alu_rst_data(ex_alu_rst_data),
+        .en_mem_rst(ex_mem_en),
+        .mem_rst_tag(ex_mem_rst_tag),
+        .mem_rst_data(ex_mem_rst_data),
+        .ex_branch_en(branch_ex_en),
+        .exsrc1_out(branch_exsrc1),
+        .exsrc2_out(branch_exsrc2),
+        .expc_out(branch_expc),
+        .exaluop_out(branch_exaluop),
+        .exoffset_out(branch_exoffset)
+    );
+    
+    ex_branch ex_branch(
+        .ex_branch_en(branch_ex_en),
+        .exsrc1(branch_exsrc1),
+        .exsrc2(branch_exsrc2),
+        .expc(branch_expc),
+        .exaluop(branch_exaluop),
+        .exoffset(branch_exoffset),
+        .branch_dest_valid(branch_if_branch_dest_valid),
+        .branch_dest(branch_if_branch_dest)
+    );
+    
+    wire ls_ex_en, ex_ls_done;
+    wire [`dataWidth - 1 : 0] ls_exsrc1;
+    wire [`dataWidth - 1 : 0] ls_exsrc2;
+    wire [`dataWidth - 1 : 0] ls_exreg;
+    wire [`newopWidth - 1 : 0] ls_exlsop;
+    wire [`tagWidth - 1 : 0]  ls_exdest;
+    
+    lsbuffer lsbuffer(
+        .clk(clk),
+        .rst(rst),
+        .alloc_enable(dec_ls_en),
+        .decoder_data(dec_ls_data),
+        .en_alu_rst(ex_alu_en),
+        .alu_rst_tag(ex_alu_rst_tag),
+        .alu_rst_data(ex_alu_rst_data),
+        .en_mem_rst(ex_mem_en),
+        .mem_rst_tag(ex_mem_rst_tag),
+        .mem_rst_data(ex_mem_rst_data),
+        .ex_ls_done(ex_ls_done),
+        .ex_ls_en(ls_ex_en),
+        .exsrc1_out(ls_exsrc1),
+        .exsrc2_out(ls_exsrc2),
+        .exreg_out(ls_exreg),
+        .exlsop_out(ls_exlsop),
+        .exdest_out(ls_exdest),
+        .lsbuffer_free(ls_if_ls_free)
+    );
+    
+    ex_ls ex_ls(
+        .clk(clk),
+        .rst(rst),
+        .ex_ls_en(ls_ex_en),
+        .ex_src1(ls_exsrc1),
+        .ex_src2(ls_exsrc2),
+        .ex_reg(ls_exreg),
+        .ex_lsop(ls_exlsop),
+        .ex_dest(ls_exdest),
+        .ex_ls_done(ex_ls_done),
+        .en_rst(ex_mem_en),
+        .rst_data(ex_mem_rst_data),
+        .rst_tag(ex_mem_rst_tag),
+        .rw_flag(core_mcu_rw_flag[1]),
+        .addr(core_mcu_addr[1]),
+        .write_data(core_mcu_data[1]),
+        .len(core_mcu_len[1]),
+        .read_data(mcu_core_data[1]),
+        .mem_busy(mcu_core_busy[1]),
+        .mem_done(mcu_core_done[1])
     );
     
     wire rob_arf_en;
@@ -221,6 +323,9 @@ module cpu(
         .alu_rst_en(ex_alu_en),
         .alu_rst_data(ex_alu_rst_data),
         .alu_rst_tag(ex_alu_rst_tag),
+        .mem_rst_en(ex_mem_en),
+        .mem_rst_data(ex_mem_rst_data),
+        .mem_rst_tag(ex_mem_rst_tag),
         .rob_free(rob_if_rob_free)
     );
     

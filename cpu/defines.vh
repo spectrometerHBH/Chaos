@@ -13,19 +13,15 @@
 `define UImmWidth          20
 `define JImmWidth          20
 `define newopWidth         5 
-`define robOpWidith        3
-`define aluRSWidth         4
-`define branchALURSWidth   4
-`define branchAddrWidth    2
-`define historyTableWidth  2
-`define globalHistoryWidth 2
 `define rw_flagWidth       2
 `define maskWidth          4
 
 `define rs_alu_size        4
 `define rs_alu_sel         2
-`define rs_branch_size     4
-`define rs_branch_sel      2 
+`define rs_branch_size     2
+`define rs_branch_sel      1 
+`define lsbuf_size         4
+`define lsbuf_sel          2 
 `define reg_size           32
 `define rob_size           8
 `define rob_sel            3
@@ -49,13 +45,22 @@
 `define aluTag2Range      76 : 73
 `define aluDestRange      79 : 77
 
-`define branchALUWidth        109
-`define branchALUOpRange      4   : 0
-`define branchALUData1Range   36  : 5
-`define branchALUTag1Range    40  : 37
-`define branchALUData2Range   72  : 41
-`define branchALUTag2Range    76  : 73
-`define branchALUOffsetRange  108 : 77
+`define branchWidth        109
+`define branchOpRange      4   : 0
+`define branchData1Range   36  : 5
+`define branchTag1Range    40  : 37
+`define branchData2Range   72  : 41
+`define branchTag2Range    76  : 73
+`define branchOffsetRange  108 : 77
+
+`define lsWidth         112
+`define lsOpRange       4 : 0
+`define lsBaseRange     36 : 5 
+`define lsBaseTagRange  40 : 37 
+`define lsSrcRange      72 : 41    
+`define lsSrcTagRange   76 : 73
+`define lsImmRange      108 : 77
+`define lsDestRange     111 : 109
 
 `define tagFree     4'b1000
 

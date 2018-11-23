@@ -47,6 +47,10 @@ module rs_branch_ent(
     input wire en_alu_rst,
     input wire [`tagWidth - 1 : 0] alu_rst_tag,
     input wire [`dataWidth - 1 : 0] alu_rst_data,
+    //input from ex_ls
+    input wire en_mem_rst,
+    input wire [`tagWidth - 1 : 0] mem_rst_tag,
+    input wire [`dataWidth - 1 : 0] mem_rst_data,
     //output to ex_branch
     output wire [`dataWidth - 1 : 0] ex_src1,
     output wire [`dataWidth - 1 : 0] ex_src2,
@@ -69,7 +73,7 @@ module rs_branch_ent(
     assign ex_pc   = PC;
     assign ex_aluop = op;
     assign ex_offset = offset;
-    assign ready = busy && (tag1 == `tagFree) && (tag2 == `tagFree) ? 1 : 0;
+    assign ready = busy && (next_tag1 == `tagFree) && (next_tag2 == `tagFree) ? 1 : 0;
     
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
@@ -104,6 +108,9 @@ module rs_branch_ent(
         .ex_rst1_en(en_alu_rst),
         .ex_rst1_tag(alu_rst_tag),
         .ex_rst1_data(alu_rst_data),
+        .ex_rst2_en(en_mem_rst),
+        .ex_rst2_tag(mem_rst_tag),
+        .ex_rst2_data(mem_rst_data),
         .next_data(next_data1),
         .next_tag(next_tag1)
     );
@@ -114,6 +121,9 @@ module rs_branch_ent(
         .ex_rst1_en(en_alu_rst),
         .ex_rst1_tag(alu_rst_tag),
         .ex_rst1_data(alu_rst_data),
+        .ex_rst2_en(en_mem_rst),
+        .ex_rst2_tag(mem_rst_tag),
+        .ex_rst2_data(mem_rst_data),
         .next_data(next_data2),
         .next_tag(next_tag2)
     );
@@ -130,6 +140,10 @@ module rs_branch(
     input wire en_alu_rst,
     input wire [`tagWidth - 1 : 0] alu_rst_tag,
     input wire [`dataWidth - 1 : 0] alu_rst_data,
+    //input from ex_ls
+    input wire en_mem_rst,
+    input wire [`tagWidth - 1 : 0] mem_rst_tag,
+    input wire [`dataWidth - 1 : 0] mem_rst_data,
     //output to ex_branch
     output reg ex_branch_en,
     output reg [`dataWidth - 1 : 0] exsrc1_out,
@@ -179,6 +193,9 @@ module rs_branch(
                 .en_alu_rst(en_alu_rst),
                 .alu_rst_tag(alu_rst_tag),
                 .alu_rst_data(alu_rst_data),
+                .en_mem_rst(en_mem_rst),
+                .mem_rst_tag(mem_rst_tag),
+                .mem_rst_data(mem_rst_data),
                 .ex_src1(exsrc1[i]),
                 .ex_src2(exsrc2[i]),
                 .ex_pc(expc[i]),
