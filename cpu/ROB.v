@@ -5,6 +5,7 @@
 module ROB(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //input from Decoder
     input wire [`tagWidth - 1 : 0] decoder_tag1,
     input wire [`tagWidth - 1 : 0] decoder_tag2,
@@ -62,14 +63,19 @@ module ROB(
     assign com_data = data[com_ptr];
     assign com_tag  = com_ptr;
     assign rob_free = ent_cnt < `rob_size ? 1 : 0;
-    
+                
+    integer i; 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
             ent_cnt <= 0;
             com_ptr  <= 0;
             alloc_ptr <= 0;
             valid <= 0;
-        end else begin
+            for (i = 0; i < `rob_size; i = i + 1) begin
+                data[i] <= 0;
+                dest[i] <= `tagFree;
+            end
+        end else if (rdy) begin
             if (alu_rst_en) begin
                 data[alu_rst_tag[2 : 0]] <= alu_rst_data;
                 valid[alu_rst_tag[2 : 0]] <= 1;

@@ -5,6 +5,7 @@
 module lsbuffer_ent(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //allocate
     input wire busy,
     input wire allocate_en,
@@ -49,7 +50,7 @@ module lsbuffer_ent(
             tag2  <= `tagFree;
             dest  <= `tagFree;
             op    <= `NOP;
-        end else begin
+        end else if (rdy) begin
             if (allocate_en) begin
                 data1 <= allocate_data[`lsBaseRange];
                 tag1  <= allocate_data[`lsBaseTagRange];
@@ -98,6 +99,7 @@ endmodule
 module lsbuffer(
     input wire clk, 
     input wire rst,
+    input wire rdy,
     //input from Decoder
     input wire alloc_enable,
     input wire [`lsWidth - 1 : 0] decoder_data,
@@ -140,7 +142,7 @@ module lsbuffer(
             allocate_addr <= 0;
             issue_addr    <= 0;
             ent_cnt       <= 0;
-        end else begin
+        end else if (rdy) begin
             if (alloc_enable && issue_en) begin
                 busy[allocate_addr] <= 1;
                 busy[issue_addr]    <= 0;
@@ -164,6 +166,7 @@ module lsbuffer(
             lsbuffer_ent lsbuffer_ent(
                 .clk(clk),
                 .rst(rst),
+                .rdy(rdy),
                 .busy(busy[i]),
                 .allocate_en(alloc_enable && allocate_addr == i),
                 .allocate_data(decoder_data),
@@ -191,7 +194,7 @@ module lsbuffer(
             exreg_out <= 0;
             exlsop_out <= 0;
             exdest_out <= 0;
-        end else begin
+        end else if (rdy) begin
             ex_ls_en <= 0;
             exsrc1_out <= 0;
             exsrc2_out <= 0;

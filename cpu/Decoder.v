@@ -3,8 +3,6 @@
 `include "defines.vh"
 
 module Decoder(
-    input wire clk,
-    input wire rst,
     //input from PC
     input wire decoderEnable,
     input wire [`instWidth - 1 : 0] instToDecode,
@@ -172,125 +170,111 @@ module Decoder(
     
     //generate request to rs, rob & reg
     always @ (*) begin
-        if (rst) begin
-            aluEnable       = 0;
-            robEnable       = 0;
-            lsEnable        = 0;
-            regEnable       = 0;
-            branchEnable    = 0;
-            aluData         = 0;
-            robData         = 0;
-            lsData          = 0; 
-            branchData      = 0;
-            regTagAddr      = 0;
-            regTag          = `tagFree;
-        end begin
-            aluEnable       = 0;
-            robEnable       = 0;
-            lsEnable        = 0;
-            regEnable       = 0;
-            branchEnable    = 0;
-            aluData         = 0;
-            robData         = 0;
-            branchData      = 0;
-            lsData          = 0;
-            regTagAddr      = 0;
-            regTag          = `tagFree;
-            if (decoderEnable) begin
-                case (classop)
-                    `classRI : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
-                        };    
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classRR : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, tag2, data2, tag1, data1, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classLUI : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {UImm, {(`dataWidth - `UImmWidth){1'b0}}}, tagd, datad, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classAUIPC : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {UImm, {(`dataWidth - `UImmWidth){1'b0}}}, `tagFree, inst_PC, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classJAL : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, inst_PC, `tagFree, JImm, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classJALR : begin
-                        aluEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        aluData = {
-                            ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classBranch : begin
-                        branchEnable = 1;
-                        branchData = {
-                            BImm, tag2, data2, tag1, data1, newop
-                        };
-                    end
-                    `classLoad : begin
-                        lsEnable = 1;
-                        robEnable = 1;
-                        regEnable = 1;
-                        lsData = {
-                            ROBtail, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag2, data2, tag1, data1, newop
-                        };
-                        robData = rd;
-                        regTagAddr = rd;
-                        regTag = {1'b0, ROBtail};
-                    end
-                    `classSave : begin
-                        lsEnable = 1;
-                        regEnable = 1;
-                        lsData = {
-                            3'b0, SImm, tag2, data2, tag1, data1, newop     
-                        };
-                    end
-                    default : ;
-               endcase
-            end
+        aluEnable       = 0;
+        robEnable       = 0;
+        lsEnable        = 0;
+        regEnable       = 0;
+        branchEnable    = 0;
+        aluData         = 0;
+        robData         = 0;
+        branchData      = 0;
+        lsData          = 0;
+        regTagAddr      = 0;
+        regTag          = `tagFree;
+        if (decoderEnable) begin
+            case (classop)
+                `classRI : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
+                    };    
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classRR : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, tag2, data2, tag1, data1, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classLUI : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {UImm, {(`dataWidth - `UImmWidth){1'b0}}}, tagd, datad, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classAUIPC : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {UImm, {(`dataWidth - `UImmWidth){1'b0}}}, `tagFree, inst_PC, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classJAL : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, inst_PC, `tagFree, JImm, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classJALR : begin
+                    aluEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    aluData = {
+                        ROBtail, `tagFree, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag1, data1, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classBranch : begin
+                    branchEnable = 1;
+                    branchData = {
+                        BImm, tag2, data2, tag1, data1, newop
+                    };
+                end
+                `classLoad : begin
+                    lsEnable = 1;
+                    robEnable = 1;
+                    regEnable = 1;
+                    lsData = {
+                        ROBtail, {{(`dataWidth - `RIImmWidth){Imm[`RIImmWidth - 1]}}, Imm}, tag2, data2, tag1, data1, newop
+                    };
+                    robData = rd;
+                    regTagAddr = rd;
+                    regTag = {1'b0, ROBtail};
+                end
+                `classSave : begin
+                    lsEnable = 1;
+                    regEnable = 1;
+                    lsData = {
+                        3'b0, SImm, tag2, data2, tag1, data1, newop     
+                    };
+                end
+                default : ;
+           endcase
         end
     end
 

@@ -3,6 +3,7 @@
 module ex_ls(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //input from lsbuffer
     input wire ex_ls_en,
     input wire [`dataWidth - 1 : 0] ex_src1,
@@ -45,7 +46,7 @@ module ex_ls(
             rst_tag <= `tagFree;
             write_data <= 0;
             unsign <= 0;
-        end else begin
+        end else if (rdy) begin
             case (state)
                 STATE_IDLE : begin
                     en_rst <= 0;
@@ -85,17 +86,23 @@ module ex_ls(
                             `SB : begin
                                 rw_flag <= 2'b10;
                                 len <= 2'b00;
+                                rst_tag <= `tagFree;
                                 write_data <= ex_reg;
+                                unsign <= 0;
                             end
                             `SH : begin
                                 rw_flag <= 2'b10;
                                 len <= 2'b01; 
+                                rst_tag <= `tagFree;
                                 write_data <= ex_reg;
+                                unsign <= 0;
                             end
                             `SW : begin
                                 rw_flag <= 2'b10;
                                 len <= 2'b11;
+                                rst_tag <= `tagFree;
                                 write_data <= ex_reg;
+                                unsign <= 0;
                             end
                         endcase
                         state <= STATE_BUSY; 
@@ -108,6 +115,7 @@ module ex_ls(
                         rst_data <= 0;
                         rst_tag <= `tagFree;
                         write_data <= 0;
+                        unsign <= 0;
                     end   
                 end
                 STATE_BUSY : begin

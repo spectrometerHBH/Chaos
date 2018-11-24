@@ -5,6 +5,7 @@
 module mem_ctrl(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //port with CORE
     input wire [3 : 0] rw_flag,
     input wire [2 * `addrWidth - 1 : 0] addr,
@@ -40,13 +41,30 @@ module mem_ctrl(
     assign ram_addr     = serving_addr;
     assign ram_data_out = serving_data_out[serving_byte_cnt];
     
+    integer i;
     always @ (negedge clk) begin
         if (rst) begin
             state        <= STATE_IDLE;
             pending_flag <= 0;
+            for (i = 0; i < 2; i = i + 1) begin
+                pending_rw_flag[i] <= 0;
+                pending_addr[i] <= 0;
+                pending_len[i] <= 0;
+                pending_data_in[i] <= 0;
+            end
+            data_out     <= 0;
             busy         <= 0;
             done         <= 0;
-        end else begin
+            serving_rw_flag <= 0;
+            serving_addr <= 0;
+            serving_len <= 0;
+            serving_data_out[0] <= 0;
+            serving_data_out[1] <= 0;
+            serving_data_out[2] <= 0;
+            serving_data_out[3] <= 0;
+            serving_byte_cnt <= 0;
+            serving_port_id <= 0;
+        end else if (rdy) begin
             //port 0 pending
             done   <= 0;
             if (rw_flag[1 : 0] != 0 && pending_flag[0] == 0) begin

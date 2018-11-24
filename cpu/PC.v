@@ -5,6 +5,7 @@
 module PC(
     input wire clk, 
     input wire rst,
+    input wire rdy,
     //output to Decoder
     output reg Decoder_enable,
     output reg [`addrWidth - 1 : 0] PC_Decoder,
@@ -39,7 +40,6 @@ module PC(
     assign len   = 2'b11;
     assign stall = ~(alu_free & rob_free & ls_free);    
     assign jump  = read_data[`classOpRange] == `classBranch || 
-                   read_data[`classOpRange] == `classAUIPC  ||
                    read_data[`classOpRange] == `classJAL    ||
                    read_data[`classOpRange] == `classJALR   ? 1 : 0;
 
@@ -52,7 +52,7 @@ module PC(
             PC_Decoder <= 0;
             inst_Decoder <= 0; 
             PC_state <= STATE_IDLE;
-        end else begin
+        end else if (rdy) begin
             rw_flag <= 0;
             Decoder_enable <= 0;
             PC_Decoder   <= PC;

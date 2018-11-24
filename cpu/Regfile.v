@@ -5,6 +5,7 @@
 module Regfile(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //Write Port with ROB
     input wire enWrite,
     input wire [`regWidth  - 1 : 0] namew,
@@ -32,26 +33,26 @@ module Regfile(
 
     integer i;
 	always @ (posedge clk or posedge rst) begin
-		if (rst) begin
-			for (i = 0; i < `reg_size; i = i + 1) begin
-				data[i] <= 0;
-				tag[i]  <= `tagFree;  
-			end
-		end else begin
-			if (enWrite) begin
-				if (namew) begin
-					data[namew] <= dataw;
-					if (tag[namew] == tagw && tagw != tagDecoderw) begin
-						tag[namew] <= `tagFree;
-					end
-				end
-			end
-			if (enDecoderw) begin
-				if (regDecoderw) begin
-					tag[regDecoderw] <= tagDecoderw;
-				end
-			end
-		end
+        if (rst) begin
+            for (i = 0; i < `reg_size; i = i + 1) begin
+                data[i] <= 0;
+                tag[i]  <= `tagFree;  
+            end
+        end else if (rdy) begin
+            if (enWrite) begin
+                if (namew) begin
+                    data[namew] <= dataw;
+                    if (tag[namew] == tagw && tagw != tagDecoderw) begin
+                        tag[namew] <= `tagFree;
+                    end
+                end
+            end
+            if (enDecoderw) begin
+                if (regDecoderw) begin
+                    tag[regDecoderw] <= tagDecoderw;
+                end
+            end
+        end
 	end
 
     always @ (*) begin

@@ -56,6 +56,7 @@ endmodule
 module rs_alu_ent(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //allocate
     input wire busy,
     input wire allocate_en,
@@ -102,7 +103,7 @@ module rs_alu_ent(
             dest  <= `tagFree;
             PC    <= 0;
             op    <= `NOP;
-        end else begin
+        end else if (rdy) begin
             if (allocate_en) begin
                 data1 <= allocate_data[`aluData1Range];
                 tag1  <= allocate_data[`aluTag1Range];
@@ -151,6 +152,7 @@ endmodule
 module rs_alu(
     input wire clk, 
     input wire rst,
+    input wire rdy,
     //input from Decoder
     input wire alloc_enable,
     input wire [`aluWidth - 1 : 0] decoder_data,
@@ -197,7 +199,7 @@ module rs_alu(
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
             busy <= 0;
-        end else begin
+        end else if (rdy) begin
             if (alloc_enable && allocate_en) busy[allocate_addr] <= 1'b1;
             if (issue_en)                    busy[issue_addr]    <= 1'b0;
         end
@@ -209,6 +211,7 @@ module rs_alu(
             rs_alu_ent rs_alu_ent(
                 .clk(clk),
                 .rst(rst),
+                .rdy(rdy),
                 .busy(busy[i]),
                 .allocate_en(alloc_enable && allocate_en && allocate_addr == i),
                 .allocate_data(decoder_data),
@@ -237,7 +240,7 @@ module rs_alu(
             expc_out <= 0;
             exaluop_out <= 0;
             exdest_out <= 0;
-        end else begin
+        end else if (rdy) begin
             ex_alu_en <= 0;
             exsrc1_out <= 0;
             exsrc2_out <= 0;

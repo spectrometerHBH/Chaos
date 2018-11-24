@@ -38,6 +38,7 @@ endmodule
 module rs_branch_ent(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //allocate
     input wire busy,
     input wire allocate_en,
@@ -84,7 +85,7 @@ module rs_branch_ent(
             offset <= 0;
             PC    <= 0;
             op    <= `NOP;
-        end else begin
+        end else if (rdy) begin
             if (allocate_en) begin
                 data1 <= allocate_data[`branchData1Range];
                 tag1  <= allocate_data[`branchTag1Range];
@@ -132,6 +133,7 @@ endmodule
 module rs_branch(
     input wire clk,
     input wire rst,
+    input wire rdy,
     //input from Decoder
     input alloc_enable,
     input wire [`branchWidth - 1 : 0] decoder_data,
@@ -174,7 +176,7 @@ module rs_branch(
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
             busy <= 0;
-        end else begin
+        end else if (rdy) begin
             if (alloc_enable && allocate_en) busy[allocate_addr] <= 1'b1;
             if (issue_en)                    busy[issue_addr]    <= 1'b0;
         end
@@ -186,6 +188,7 @@ module rs_branch(
             rs_branch_ent rs_branch_ent(
                 .clk(clk),
                 .rst(rst),
+                .rdy(rdy),
                 .busy(busy[i]),
                 .allocate_en(alloc_enable && allocate_en && allocate_addr == i),
                 .allocate_data(decoder_data),
@@ -214,7 +217,7 @@ module rs_branch(
             expc_out <= 0;
             exaluop_out <= 0;
             exoffset_out <= 0; 
-        end else begin
+        end else if (rdy) begin
             ex_branch_en <= 0;
             exsrc1_out <= 0;
             exsrc2_out <= 0;

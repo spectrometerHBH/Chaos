@@ -50,11 +50,7 @@ module ex_alu(
                     rst_data  = expc + 4;
                     jump_dest_valid = 1; 
                 end
-                `AUIPC : begin
-                    jump_dest = $signed(exsrc1) + $signed(exsrc2);
-                    rst_data  = $signed(exsrc1) + $signed(exsrc2);
-                    jump_dest_valid = 1;
-                end
+                `AUIPC : rst_data  = $signed(exsrc1) + $signed(exsrc2);
                 default : begin
                 end
             endcase    

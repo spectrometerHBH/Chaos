@@ -1,43 +1,129 @@
-.org 0x0
- 	.global _start
-_start:
-	ori x1, x0, 0x210 # x1 = 0210 0
-	ori x2, x1, 0x021 # x2 = 0x231 4
-	slli x3, x2, 1  # x3 = 0b010001100010 = 0x462 8
-	andi x4, x3, 0x568 # x4 = 0b010001100000 = 0x460 c
-	ori x5, x0, 0x68a # x5 = 0b011010001010 = 0x68a 10
-	ori x7, x0, 22 # x7 = 22 = 0x16 14
-	sll x5, x5, x7 # x5 = 0xa2800000 18
-	ori x7, x0, 20 # x7 = 20 = 0x14 1c
-	sra x6, x5, x7 # x6 = 0xfffffa28 20
-	ori x5, x0, 0x723 # x5 = 0b011100100011 = 0x723 24
-	xor x5, x5, x4 # x5 = 0b001101000011 = 0x343 28
-	add x6, x5, x4 # x6 = 0x7a3 2c
-	slti x7, x6, 0x7a4 # x7 = 1 30
-	slti x8, x6, 0x7a3 # x8 = 0 34
-	slt x8, x6, x5 # x8 = 0 38
-	slt x8, x5, x6 # x8 = 1 3c
-	sub x9, x6, x5 # x9 = 0x460 40
-	lui x10, 0x45b27 # x10 = 0x45b27000 44
-	auipc x11, 0x21c43 # x11 = 0x21c43048 48
-es_j1:
-	bge x10, x11, es_j2 # jump to es_j2 & x1 = 80 = 0x50
-	ori x12, x0, 0x456 # x12 = 0x456
-	ori x13, x0, 0x2bc # x13 = 0x2bc
-	nop
-	nop
-	nop
-es_j2:
-	ori x12, x0, 0x5ef # x12 = 0x5ef
-	ori x13, x0, 0x123 # x13 = 0x123
-	# j es_j1 # jump to es_j1, which makes an infinite loop
-	sb x11, 2(x13) # store 0x48 to mem:0x125
-	lb x14, 2(x13) # x14 = 0x48
-	sb x12, 1(x13) # store 0xef to mem:0x124
-	lh x14, 1(x13) # x14 = 0x48ef
-	add x15, x14, x0 # x15 = 0x48ef
-	sh x5, 3(x13) # store 0x0343 to mem:0x126
-	lw x15, 1(x13) # x15 = 0x034348ef
-	add x17, x7, x15 # x17 = 0x034348f0
-	sw x11, 5(x13) # store 0x21c43048 to mem:0x128
-	lw x16, 5(x13) # x16 = 0x21c43048
+	.file	"test.c"
+	.option nopic
+	.text
+	.globl	__umodsi3
+	.globl	__modsi3
+	.globl	__udivsi3
+	.globl	__divsi3
+	.section	.text.startup,"ax",@progbits
+	.align	2
+	.globl	main
+	.type	main, @function
+main:
+	addi	sp,sp,-48
+	lui	a5,%hi(pa)
+	sw	s3,28(sp)
+	lw	a1,%lo(pa)(a5)
+	sw	ra,44(sp)
+	sw	s0,40(sp)
+	sw	s1,36(sp)
+	sw	s2,32(sp)
+	sw	s4,24(sp)
+	sw	s5,20(sp)
+	sw	s6,16(sp)
+	li	a5,196608
+	li	a4,52
+	sb	a4,0(a5)
+	li	a4,10
+	sb	a4,0(a5)
+	li	a5,1
+	sw	a5,4(a1)
+	li	a5,2
+	sw	a5,8(a1)
+	li	a5,3
+	addi	s3,sp,4
+	sw	a5,12(a1)
+	li	a5,48
+	sb	a5,4(sp)
+	sw	zero,0(a1)
+	mv	a5,s3
+	li	a4,48
+	li	a2,196608
+	j	.L3
+.L18:
+	lbu	a4,-1(a5)
+	mv	a5,a3
+.L3:
+	sb	a4,0(a2)
+	addi	a3,a5,-1
+	bne	s3,a5,.L18
+	lw	s2,4(a1)
+	li	s6,0
+	bgez	s2,.L4
+	sub	s2,zero,s2
+	li	s6,1
+.L4:
+	li	s1,0
+	li	s5,9
+	j	.L5
+.L11:
+	mv	s1,s4
+	mv	s2,a0
+.L5:
+	li	a1,10
+	mv	a0,s2
+	call	__modsi3
+	addi	a0,a0,48
+	addi	s4,s1,1
+	andi	s0,a0,0xff
+	add	a5,s3,s4
+	mv	a0,s2
+	li	a1,10
+	sb	s0,-1(a5)
+	call	__divsi3
+	bgt	s2,s5,.L11
+	beqz	s6,.L6
+	addi	a5,sp,16
+	add	a5,a5,s4
+	li	a4,45
+	sb	a4,-12(a5)
+	mv	s1,s4
+	li	s0,45
+.L6:
+	add	a5,s3,s1
+	li	a3,196608
+	j	.L8
+.L19:
+	lbu	s0,-1(a5)
+	mv	a5,a4
+.L8:
+	sb	s0,0(a3)
+	addi	a4,a5,-1
+	bne	s3,a5,.L19
+	lui	a5,%hi(.LC0)
+	addi	a5,a5,%lo(.LC0)
+	li	a4,102
+	li	a3,196608
+.L9:
+	sb	a4,0(a3)
+	addi	a5,a5,1
+	lbu	a4,0(a5)
+	bnez	a4,.L9
+	li	a5,10
+	sb	a5,0(a3)
+	lw	ra,44(sp)
+	lw	s0,40(sp)
+	lw	s1,36(sp)
+	lw	s2,32(sp)
+	lw	s3,28(sp)
+	lw	s4,24(sp)
+	lw	s5,20(sp)
+	lw	s6,16(sp)
+	li	a0,0
+	addi	sp,sp,48
+	jr	ra
+	.size	main, .-main
+	.globl	pa
+	.comm	a,16,4
+	.section	.rodata.str1.4,"aMS",@progbits,1
+	.align	2
+.LC0:
+	.string	"fuck you"
+	.section	.sdata,"aw"
+	.align	2
+	.type	pa, @object
+	.size	pa, 4
+pa:
+	.word	a
+	.ident	"GCC: (GNU) 8.2.0"
+

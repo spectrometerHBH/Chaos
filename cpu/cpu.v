@@ -41,6 +41,7 @@ module cpu(
     mem_ctrl mcu(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .rw_flag({core_mcu_rw_flag[1], core_mcu_rw_flag[0]}),
         .addr({core_mcu_addr[1], core_mcu_addr[0]}),
         .len({core_mcu_len[1], core_mcu_len[0]}),
@@ -68,6 +69,7 @@ module cpu(
     PC fetcher(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .Decoder_enable(if_dec_en),
         .PC_Decoder(if_dec_pc),
         .inst_Decoder(if_dec_inst),
@@ -120,8 +122,6 @@ module cpu(
     wire [`tagWidth - 1 : 0]  dec_arf_tag;                       
      
     Decoder decoder(
-        .clk(clk),
-        .rst(rst),
         .decoderEnable(if_dec_en),
         .instToDecode(if_dec_inst),
         .inst_PC(if_dec_pc),
@@ -176,6 +176,7 @@ module cpu(
     rs_alu rs_alu(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .alloc_enable(dec_alu_en),
         .decoder_data(dec_alu_data),
         .inst_PC(dec_alu_inst_pc),
@@ -218,6 +219,7 @@ module cpu(
     rs_branch rs_branch(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .alloc_enable(dec_branch_en),
         .decoder_data(dec_branch_data),
         .inst_PC(dec_branch_inst_pc),
@@ -256,6 +258,7 @@ module cpu(
     lsbuffer lsbuffer(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .alloc_enable(dec_ls_en),
         .decoder_data(dec_ls_data),
         .en_alu_rst(ex_alu_en),
@@ -277,6 +280,7 @@ module cpu(
     ex_ls ex_ls(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .ex_ls_en(ls_ex_en),
         .ex_src1(ls_exsrc1),
         .ex_src2(ls_exsrc2),
@@ -304,6 +308,7 @@ module cpu(
     ROB reorder_buf(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .decoder_tag1(dec_rob_tagcheck1),
         .decoder_tag2(dec_rob_tagcheck2),
         .decoder_tagd(dec_rob_tagcheckd),
@@ -332,6 +337,7 @@ module cpu(
     Regfile arf(
         .clk(clk),
         .rst(rst),
+        .rdy(rdy),
         .enWrite(rob_arf_en),
         .namew(rob_arf_addr),
         .dataw(rob_arf_data),
