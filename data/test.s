@@ -1,46 +1,43 @@
 .org 0x0
-	.globl _start
-
+ 	.global _start
 _start:
-	lui	x3,0x0eeff # 0
-	srli x3, x3, 12 # 4
-	sb	x3, 3(x0)		 # [0x3] = 0xff 8
-	srl  x3,x3,8         # c
-	sb	x3, 2(x0)		 # [0x2] = 0xee #10
-	lui x3,0xccdd        # 14
-	srli x3, x3, 12      # 1c
-	sb	x3, 1(x0)		 # [0x1] = 0xdd #20
-	srl  x3,x3,8         #24
-	sb	x3, 0(x0)		 # [0x0] = 0xcc
-	lb	x1, 3(x0)		 # x1 = 0xffffffff
-	lbu  x1, 2(x0)		 # x1 = 0x000000ee
-	lw	x1, 0(x0)		# x1 = 0xffeeddcc
+	ori x1, x0, 0x210 # x1 = 0210 0
+	ori x2, x1, 0x021 # x2 = 0x231 4
+	slli x3, x2, 1  # x3 = 0b010001100010 = 0x462 8
+	andi x4, x3, 0x568 # x4 = 0b010001100000 = 0x460 c
+	ori x5, x0, 0x68a # x5 = 0b011010001010 = 0x68a 10
+	ori x7, x0, 22 # x7 = 22 = 0x16 14
+	sll x5, x5, x7 # x5 = 0xa2800000 18
+	ori x7, x0, 20 # x7 = 20 = 0x14 1c
+	sra x6, x5, x7 # x6 = 0xfffffa28 20
+	ori x5, x0, 0x723 # x5 = 0b011100100011 = 0x723 24
+	xor x5, x5, x4 # x5 = 0b001101000011 = 0x343 28
+	add x6, x5, x4 # x6 = 0x7a3 2c
+	slti x7, x6, 0x7a4 # x7 = 1 30
+	slti x8, x6, 0x7a3 # x8 = 0 34
+	slt x8, x6, x5 # x8 = 0 38
+	slt x8, x5, x6 # x8 = 1 3c
+	sub x9, x6, x5 # x9 = 0x460 40
+	lui x10, 0x45b27 # x10 = 0x45b27000 44
+	auipc x11, 0x21c43 # x11 = 0x21c43048 48
+es_j1:
+	bge x10, x11, es_j2 # jump to es_j2 & x1 = 80 = 0x50
+	ori x12, x0, 0x456 # x12 = 0x456
+	ori x13, x0, 0x2bc # x13 = 0x2bc
 	nop
-
-	lui x3,0xaabb
-	srli x3, x3, 12
-	sh	x3, 4(x0)		 # [0x4] = 0xbb, [0x5] = 0xaa
-	lhu  x1, 4(x0)		 # x1 = 0x0000aabb
-	lh	x1, 4(x0)		 # x1 = 0xffffaabb
-
-	lui x3,0x8899
-	srli x3, x3, 12
-	sh	x3, 6(x0)		 # [0x6] = 0x99, [0x7] = 0x88
-	lh	x1, 6(x0)		 # x1 = 0xffff8899
-	lhu  x1, 6(x0)		 # x1 = 0x00008899
-
-	lui x3,0x4455
-	srli x3, x3, 12
-	sll  x3,x3,0x10
-	lui x2, 0x6677
-	srli x2, x2, 12
-	or x3, x2, x3		# x3 = 0x44556677
-	sw	x3, 8(x0)		 # [0x8] = 0x77, [0x9]= 0x66, [0xa]= 0x55, [0xb] = 0x44
-	lw	x1, 8(x0)		 # x1 = 0x44556677
-
-
-
-
-_loop:
-	j _loop
 	nop
+	nop
+es_j2:
+	ori x12, x0, 0x5ef # x12 = 0x5ef
+	ori x13, x0, 0x123 # x13 = 0x123
+	# j es_j1 # jump to es_j1, which makes an infinite loop
+	sb x11, 2(x13) # store 0x48 to mem:0x125
+	lb x14, 2(x13) # x14 = 0x48
+	sb x12, 1(x13) # store 0xef to mem:0x124
+	lh x14, 1(x13) # x14 = 0x48ef
+	add x15, x14, x0 # x15 = 0x48ef
+	sh x5, 3(x13) # store 0x0343 to mem:0x126
+	lw x15, 1(x13) # x15 = 0x034348ef
+	add x17, x7, x15 # x17 = 0x034348f0
+	sw x11, 5(x13) # store 0x21c43048 to mem:0x128
+	lw x16, 5(x13) # x16 = 0x21c43048

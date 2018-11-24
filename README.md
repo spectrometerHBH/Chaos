@@ -35,7 +35,7 @@ ACM Class CPU project
 
     [2] LUI	    (load upper imm)  
 
-    [0] AUIPC	(add  upper imm to PC)
+    [2] AUIPC	(add  upper imm to PC)
 
 2. **Integer R-R Instructions**  
 
@@ -64,45 +64,87 @@ ACM Class CPU project
 ### Control Transfer Instructions
 1. **Unconditional Jumps**  
     
-    [0] JAL  
+    [2] JAL  
 
-  	[0] JALR  
+  	[2] JALR  
 
 2. **Conditional Branches**  
 	
-	[0] BEQ  
+	[2] BEQ  
 	
-	[0] BNE  
+	[2] BNE  
 	
-	[0] BLT  
+	[2] BLT  
 	
-	[0] BGE  
+	[2] BGE  
 	
-	[0] BLTU  
+	[2] BLTU  
 	
-	[0] BGEU  
+	[2] BGEU  
 	
 
 ### Load & Store Instructions
 1. **Load**  
 	
-	[0] LB  
+	[2] LB  
 	
-	[0] LH  
+	[2] LH  
 	
-	[0] LW  
+	[2] LW  
 	
-	[0] LBU  
+	[2] LBU  
 	
-	[0] LHU  
+	[2] LHU  
 	
 2. **Save**  
 	
-	[0] SB  
+	[2] SB  
 	
-	[0] SH  
+	[2] SH  
 
-	[0] SW  
+	[2] SW  
+
+## Testcases
+0 - failed  
+
+1 - passed  
+
+2 - unknown
+
+    [1] array_test1  
+
+    [0] array_test2  
+
+    [1] basicopt1  
+
+    [0] bulgarian  
+
+    [1] expr  
+
+    [1] gcd  
+
+    [1] hanoi  
+
+    [1] lvalue2  
+
+    [1] magic  
+
+    [1] manyarguments  
+
+    [0] multiarray  
+
+    [1] pi  
+
+    [2] qsort  
+
+    [0] queens  
+
+    [1] statement_test  
+
+    [1] superloop  
+
+    [1] tak  
+
 
 ## Tomasulo
-Tomasulo with ROB and speculation
+Tomasulo with ROB, but without speculation
