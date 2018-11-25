@@ -3,10 +3,10 @@ ACM Class CPU project
 
 
 ## RISCV32I Instruction Set 
-0 - unsupported
-1 - waiting for test
-2 - pass simulation
-3 - complete
+0 - unsupported  
+1 - waiting for test  
+2 - pass simulation  
+3 - complete  
 
 ### Integer Computational Insturctions
 1. **Integer R-I Instructions**   
