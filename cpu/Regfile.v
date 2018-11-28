@@ -59,9 +59,9 @@ module Regfile(
 		if (rst) begin
 			data1 = 0;
 			tag1  = `tagFree;
-		end else if (enWrite && name1 == namew) begin
+		end else if (enWrite && name1 == namew && name1 != 0 && tagw == tag[name1]) begin
 			data1 = dataw;
-			tag1  = tagw;
+			tag1  = `tagFree;
 		end else begin
 			data1 = data[name1];
 			tag1  = tag [name1];
@@ -72,9 +72,9 @@ module Regfile(
 		if (rst) begin
 			data2 = 0;
 			tag2  = `tagFree;
-		end else if (enWrite && name2 == namew) begin
+		end else if (enWrite && name2 == namew && name2 != 0 && tagw == tag[name2]) begin
 			data2 = dataw;
-			tag2  = tagw;
+			tag2  = `tagFree;
 		end else begin
 			data2 = data[name2];
 			tag2  = tag [name2];
@@ -85,9 +85,9 @@ module Regfile(
     	if (rst) begin
     		data3 = 0;
     		tag3  = `tagFree;
-    	end else if (enWrite && name3 == namew) begin
+    	end else if (enWrite && name3 == namew && name3 != 0 && tagw == tag[name3]) begin
  			data3 = dataw;
- 			tag3  = tagw;   		
+ 			tag3  = `tagFree;   		
     	end else begin
     		data3 = data[name3];
     		tag3  = tag [name3];

@@ -32,9 +32,11 @@ module PC(
     localparam STATE_IDLE   = 2'b00;
     localparam STATE_OnRecv = 2'b01;
     localparam STATE_OnJump = 2'b10;
-
+    localparam STATE_OnFull = 2'b11;
+    
     reg [`addrWidth - 1 : 0] next_PC;
     reg [1 : 0]              PC_state;
+    reg counter;
     wire jump, stall;
     
     assign len   = 2'b11;
@@ -53,10 +55,6 @@ module PC(
             inst_Decoder <= 0; 
             PC_state <= STATE_IDLE;
         end else if (rdy) begin
-            rw_flag <= 0;
-            Decoder_enable <= 0;
-            PC_Decoder   <= PC;
-            inst_Decoder <= 0;
             case (PC_state)
                 STATE_IDLE : begin
                     if (!stall && !mem_busy) begin
@@ -64,65 +62,85 @@ module PC(
                         next_PC <= next_PC + 4;
                         PC_state <= STATE_OnRecv; 
                         PC <= next_PC;
+                        Decoder_enable <= 0;                        
                     end else begin
+                        rw_flag <= 0;
                         next_PC <= next_PC;
                         PC_state <= STATE_IDLE;
                         PC <= next_PC;
+                        Decoder_enable <= 0;
                     end
                 end
                 STATE_OnRecv : begin
                     if (mem_done) begin
-                        Decoder_enable <= 1;
-                        inst_Decoder <= read_data;
-                        PC_Decoder   <= PC;
-                        if (jump) begin
-                            next_PC <= next_PC;
-                            PC_state <= STATE_OnJump;
-                            PC <= PC;                                    
-                        end else begin
-                            if (!stall) begin
+                        if (!stall) begin
+                            Decoder_enable <= 1;
+                            inst_Decoder <= read_data;
+                            PC_Decoder <= PC;
+                            if (jump) begin
+                                rw_flag <= 0;
+                                next_PC <= next_PC;
+                                PC_state <= STATE_OnJump;
+                                PC <= PC;
+                            end else begin
                                 rw_flag <= 1;
                                 next_PC <= next_PC + 4;
                                 PC_state <= STATE_OnRecv;
                                 PC <= next_PC;
-                            end else begin
-                                next_PC <= next_PC;
-                                PC_state <= STATE_IDLE;
-                                PC <= next_PC;
                             end
+                        end else begin
+                            Decoder_enable <= 0;
+                            rw_flag <= 0;
+                            PC_state <= STATE_OnFull;
                         end
                     end else begin
+                        Decoder_enable <= 0;
+                        rw_flag <= 0;
                         next_PC <= next_PC;
                         PC_state <= STATE_OnRecv;
                         PC <= PC;
                     end
                 end
                 STATE_OnJump : begin
+                    Decoder_enable <= 0;
                     if (jump_dest_valid) begin
                         PC <= jump_dest;
-                        if (!stall) begin
-                            rw_flag <= 1;
-                            next_PC <= jump_dest + 4;
-                            PC_state <= STATE_OnRecv;                                
-                        end else begin
-                            next_PC <= jump_dest;
-                            PC_state <= STATE_IDLE;
-                        end
+                        rw_flag <= 1;
+                        next_PC <= jump_dest + 4;
+                        PC_state <= STATE_OnRecv; 
                     end else if (branch_dest_valid) begin
                         PC <= branch_dest;
-                        if (!stall) begin
-                            rw_flag <= 1;
-                            next_PC <= branch_dest + 4;
-                            PC_state <= STATE_OnRecv;    
-                        end else begin
-                            next_PC <= branch_dest;
-                            PC_state <= STATE_IDLE;
-                        end
+                        rw_flag <= 1;
+                        next_PC <= branch_dest + 4;
+                        PC_state <= STATE_OnRecv;
                     end else begin
+                        rw_flag <= 0;
                         PC      <= PC;
                         next_PC <= next_PC;
                         PC_state <= STATE_OnJump;
                     end 
+                end
+                STATE_OnFull : begin
+                    if (stall) begin
+                        PC_state <= STATE_OnFull;
+                        rw_flag  <= 0;
+                        Decoder_enable <= 0;
+                    end else begin
+                        Decoder_enable <= 1;
+                        inst_Decoder   <= read_data;
+                        PC_Decoder     <= PC;
+                        if (jump) begin
+                            rw_flag <= 0;
+                            next_PC <= next_PC;
+                            PC_state <= STATE_OnJump;
+                            PC <= PC;
+                        end else begin
+                            rw_flag <= 1;
+                            next_PC <= next_PC + 4;
+                            PC_state <= STATE_OnRecv;
+                            PC <= next_PC;
+                        end
+                    end
                 end
             endcase
         end

@@ -564,5 +564,7 @@ always @*
 assign active      = (q_state != S_DISABLED);
 assign ram_a       = q_addr;
 assign ram_dout    = rd_data;
-
+/*
+assign ram_dout    = 1;
+*/
 endmodule

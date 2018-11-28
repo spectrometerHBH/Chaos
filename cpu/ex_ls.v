@@ -33,7 +33,7 @@ module ex_ls(
     reg state, unsign;
     wire [`addrWidth - 1 : 0] addr_;
     assign addr_ = ex_ls_en ? ex_src1 + ex_src2 : 0;
-    assign ex_ls_done = (state == STATE_IDLE) ? ~ex_ls_en : mem_done; 
+    assign ex_ls_done = (state == STATE_IDLE) ? ~ex_ls_en : 0; 
 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin

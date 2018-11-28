@@ -176,6 +176,7 @@ module rs_alu(
     output wire rs_alu_free
 );
     reg [`rs_alu_size - 1 : 0] busy;
+    reg [`rs_alu_sel : 0] ent_counter;
     wire [`rs_alu_size - 1 : 0] ready;
     wire allocate_en, issue_en;
     wire [`rs_alu_sel - 1 : 0] allocate_addr, issue_addr;
@@ -185,7 +186,7 @@ module rs_alu(
     wire [`newopWidth - 1 : 0] exaluop [`rs_alu_size - 1 : 0];
     wire [`tagWidth   - 1 : 0] exdest [`rs_alu_size - 1 : 0];
     
-    assign rs_alu_free = allocate_en;
+    assign rs_alu_free = (ent_counter == `rs_alu_size && !issue_en) || (ent_counter == `rs_alu_size - 1 && alloc_enable) ? 0 : 1;
     
     allocater_issuer_alu aoko_alu(
         .busy(busy),
@@ -199,9 +200,18 @@ module rs_alu(
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
             busy <= 0;
+            ent_counter <= 0;
         end else if (rdy) begin
-            if (alloc_enable && allocate_en) busy[allocate_addr] <= 1'b1;
-            if (issue_en)                    busy[issue_addr]    <= 1'b0;
+            if (alloc_enable && allocate_en && issue_en) begin 
+                busy[allocate_addr] <= 1'b1;
+                busy[issue_addr]    <= 1'b0;
+            end else if (alloc_enable && allocate_en) begin
+                busy[allocate_addr] <= 1'b1;
+                ent_counter <= ent_counter + 1;
+            end else if (issue_en) begin
+                busy[issue_addr]    <= 1'b0;
+                ent_counter <= ent_counter - 1;
+            end
         end
     end
     

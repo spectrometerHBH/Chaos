@@ -36,7 +36,7 @@ module ex_alu(
                 `SLTU : rst_data = exsrc1          <   exsrc2          ? 1 : 0;
                 `XOR  : rst_data = $signed(exsrc1) ^   $signed(exsrc2);
                 `SRL  : rst_data = exsrc1          >>  exsrc2[4 : 0];
-                `SRA  : rst_data = exsrc1          >>> exsrc2[4 : 0];
+                `SRA  : rst_data = $signed(exsrc1) >>> exsrc2[4 : 0];
                 `OR   : rst_data = $signed(exsrc1) |   $signed(exsrc2);
                 `AND  : rst_data = $signed(exsrc1) &   $signed(exsrc2);
                 `LUI  : rst_data = exsrc2;
@@ -46,7 +46,7 @@ module ex_alu(
                     jump_dest_valid = 1;
                 end
                 `JALR : begin
-                    jump_dest = $signed(exsrc1) + $signed(exsrc2);
+                    jump_dest = ($signed(exsrc1) + $signed(exsrc2)) & 32'hfffffffe;
                     rst_data  = expc + 4;
                     jump_dest_valid = 1; 
                 end

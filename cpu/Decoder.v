@@ -158,7 +158,7 @@ module Decoder(
 
     // JAL
     wire [`addrWidth - 1 : 0] JImm;
-    assign JImm = {{(`addrWidth - 21){instToDecode[31]}}, instToDecode[19:12], instToDecode[20], instToDecode[30:21], 1'b0};
+    assign JImm = {{(`addrWidth - 20){instToDecode[31]}}, instToDecode[19:12], instToDecode[20], instToDecode[30:21], 1'b0};
 
     //branch
     wire [`addrWidth - 1 : 0] BImm;

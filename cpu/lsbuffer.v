@@ -133,7 +133,7 @@ module lsbuffer(
     wire [`tagWidth   - 1 : 0] exdest [`lsbuf_size - 1 : 0];
     wire issue_en;
     
-    assign lsbuffer_free = ent_cnt < `lsbuf_size ? 1 : 0;
+    assign lsbuffer_free = (ent_cnt == `lsbuf_size && !issue_en) || (ent_cnt == `lsbuf_size - 1 && alloc_enable) ? 0 : 1;
     assign issue_en      = ready[issue_addr] && ex_ls_done;
      
     always @ (posedge clk or posedge rst) begin

@@ -54,7 +54,32 @@ module cpu(
         .ram_data_out(mem_dout),
         .ram_data_in(mem_din)        
     );
-        
+    
+    wire [1 : 0]              pc_cache_rw_flag;
+    wire [`addrWidth - 1 : 0] pc_cache_addr;
+    wire [1 : 0]              pc_cache_len;
+    wire [`dataWidth - 1 : 0] cache_pc_data;
+    wire                      cache_pc_busy;
+    wire                      cache_pc_done;
+         
+    cache cache(
+        .clk(clk),
+        .rst(rst),
+        .rdy(rdy),
+        .rw_flag(pc_cache_rw_flag),
+        .PC(pc_cache_addr),
+        .len(pc_cache_len),
+        .data_out(cache_pc_data),
+        .cache_busy(cache_pc_busy),
+        .cache_done(cache_pc_done),
+        .rw_flag_out(core_mcu_rw_flag[0]),
+        .PC_out(core_mcu_addr[0]),
+        .len_out(core_mcu_len[0]),
+        .read_data(mcu_core_data[0]),
+        .mem_busy(mcu_core_busy[0]),
+        .mem_done(mcu_core_done[0])
+    );  
+    
     wire                      if_dec_en;
     wire [`addrWidth - 1 : 0] if_dec_pc;
     wire [`instWidth - 1 : 0] if_dec_inst;
@@ -77,12 +102,12 @@ module cpu(
         .jump_dest(alu_if_jump_dest),
         .branch_dest_valid(branch_if_branch_dest_valid),
         .branch_dest(branch_if_branch_dest),
-        .rw_flag(core_mcu_rw_flag[0]),
-        .PC(core_mcu_addr[0]),
-        .len(core_mcu_len[0]),
-        .read_data(mcu_core_data[0]),
-        .mem_busy(mcu_core_busy[0]),
-        .mem_done(mcu_core_done[0]),
+        .rw_flag(pc_cache_rw_flag),
+        .PC(pc_cache_addr),
+        .len(pc_cache_len),
+        .read_data(cache_pc_data),
+        .mem_busy(cache_pc_busy),
+        .mem_done(cache_pc_done),
         .alu_free(alu_if_alu_free),
         .ls_free(ls_if_ls_free),
         .rob_free(rob_if_rob_free)
