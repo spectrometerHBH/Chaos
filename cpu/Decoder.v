@@ -7,6 +7,9 @@ module Decoder(
     input wire decoderEnable,
     input wire [`instWidth - 1 : 0] instToDecode,
     input wire [`addrWidth - 1 : 0] inst_PC,
+    //output to PC,
+    output wire branch_dest_valid,
+    output reg [`addrWidth - 1 : 0] branch_dest,
     //output to ALU
     output reg  aluEnable,
     output reg  [`aluWidth - 1 : 0] aluData,
@@ -168,6 +171,37 @@ module Decoder(
     wire [`addrWidth - 1 : 0] SImm;
     assign SImm = {{(`addrWidth - 12){instToDecode[31]}}, instToDecode[31:25], instToDecode[11:7]};
     
+    //branch optimization
+    wire [`addrWidth - 1 : 0] taken, not_taken;
+    assign taken     = inst_PC + BImm;
+    assign not_taken = inst_PC + 4;
+    assign branch_dest_valid = (decoderEnable) && (classop == `classBranch) && (tag1 == `tagFree) && (tag2 == `tagFree) ? 1 : 0;
+    always @ (*) begin
+        branch_dest = 0;
+        if (decoderEnable) begin
+            case (newop)
+                `BEQ : begin
+                    branch_dest = data1 == data2 ? taken : not_taken;
+                end
+                `BNE : begin
+                    branch_dest = data1 != data2 ? taken : not_taken;
+                end
+                `BLT : begin
+                    branch_dest = $signed(data1) < $signed(data2) ? taken : not_taken;
+                end
+                `BGE : begin
+                    branch_dest = $signed(data1) >= $signed(data2) ? taken : not_taken;
+                end
+                `BLTU : begin
+                    branch_dest = data1 < data2 ? taken : not_taken;
+                end
+                `BGEU : begin
+                    branch_dest = data1 >= data2 ? taken : not_taken;
+                end
+            endcase
+        end
+    end
+    
     //generate request to rs, rob & reg
     always @ (*) begin
         aluEnable       = 0;
@@ -250,10 +284,12 @@ module Decoder(
                     regTag = {1'b0, ROBtail};
                 end
                 `classBranch : begin
-                    branchEnable = 1;
-                    branchData = {
-                        BImm, tag2, data2, tag1, data1, newop
-                    };
+                    if (!branch_dest_valid) begin
+                        branchEnable = 1;
+                        branchData = {
+                            BImm, tag2, data2, tag1, data1, newop
+                        };
+                    end
                 end
                 `classLoad : begin
                     lsEnable = 1;

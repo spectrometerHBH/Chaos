@@ -87,6 +87,8 @@ module cpu(
     wire [`addrWidth - 1 : 0] alu_if_jump_dest;
     wire                      branch_if_branch_dest_valid;
     wire [`addrWidth - 1 : 0] branch_if_branch_dest;
+    wire                      decoder_if_branch_dest_valid;
+    wire [`addrWidth - 1 : 0] decoder_if_branch_dest;
     wire                      alu_if_alu_free;
     wire                      rob_if_rob_free;
     wire                      ls_if_ls_free;
@@ -98,6 +100,8 @@ module cpu(
         .Decoder_enable(if_dec_en),
         .PC_Decoder(if_dec_pc),
         .inst_Decoder(if_dec_inst),
+        .branch_dest_valid_decoder(decoder_if_branch_dest_valid),
+        .branch_dest_decoder(decoder_if_branch_dest),
         .jump_dest_valid(alu_if_jump_dest_valid),
         .jump_dest(alu_if_jump_dest),
         .branch_dest_valid(branch_if_branch_dest_valid),
@@ -150,6 +154,8 @@ module cpu(
         .decoderEnable(if_dec_en),
         .instToDecode(if_dec_inst),
         .inst_PC(if_dec_pc),
+        .branch_dest_valid(decoder_if_branch_dest_valid),
+        .branch_dest(decoder_if_branch_dest),
         .aluEnable(dec_alu_en),
         .aluData(dec_alu_data),
         .inst_PC_out_alu(dec_alu_inst_pc),

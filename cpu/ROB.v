@@ -65,14 +65,14 @@ module ROB(
     assign rob_free = (ent_cnt == `rob_size && !com_en) || (ent_cnt == `rob_size - 1 && alloc_en) ? 0 : 1;
                 
     integer i;
-    //integer counter; 
+    integer counter; 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
             ent_cnt <= 0;
             com_ptr  <= 0;
             alloc_ptr <= 0;
             valid <= 0;
-            //counter = 0;
+            counter = 0;
             for (i = 0; i < `rob_size; i = i + 1) begin
                 data[i] <= 0;
                 dest[i] <= `tagFree;
@@ -93,7 +93,7 @@ module ROB(
                 dest[alloc_ptr] <= alloc_data;
                 alloc_ptr <= alloc_ptr + 1;
                 com_ptr <= com_ptr + 1;
-                //counter = counter + 1;
+                counter = counter + 1;
             end else if (alloc_en) begin
                 data[alloc_ptr] <= 0;
                 valid[alloc_ptr] <= 0;
@@ -104,7 +104,7 @@ module ROB(
                 valid[com_ptr] <= 0;
                 com_ptr <= com_ptr + 1;
                 ent_cnt <= ent_cnt - 1;
-                //counter = counter + 1;
+                counter = counter + 1;
             end
         end
     end

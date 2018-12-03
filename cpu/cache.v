@@ -47,7 +47,7 @@ module cache(
     assign index_serving = PC_out[8 : 2];
      
     integer i;
-    always @(negedge clk) begin
+    always @(posedge clk) begin
         if (rst) begin
             rw_flag_out <= 0;
             PC_out      <= 0;

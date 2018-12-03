@@ -111,6 +111,15 @@ module mem_ctrl(
                         serving_port_id     <= 0;
                         state               <= STATE_BUSY;
                     end else begin
+                        serving_rw_flag <= 0;
+                        serving_addr <= 0;
+                        serving_len <= 0;
+                        serving_data_out[0] <= 0;
+                        serving_data_out[1] <= 0;
+                        serving_data_out[2] <= 0;
+                        serving_data_out[3] <= 0;
+                        serving_byte_cnt <= 0;
+                        serving_port_id <= 0;
                         state               <= STATE_IDLE;
                     end
                 end
@@ -182,7 +191,16 @@ module mem_ctrl(
                             serving_port_id     <= 0;
                             state               <= STATE_BUSY;
                          end else begin
-                            state               <= STATE_IDLE;
+                            serving_rw_flag <= 0;
+                            serving_addr <= 0;
+                            serving_len <= 0;
+                            serving_data_out[0] <= 0;
+                            serving_data_out[1] <= 0;
+                            serving_data_out[2] <= 0;
+                            serving_data_out[3] <= 0;
+                            serving_byte_cnt <= 0;
+                            serving_port_id <= 0;
+                            state <= STATE_IDLE;
                          end
                     end else begin
                         serving_byte_cnt <= serving_byte_cnt + 1;

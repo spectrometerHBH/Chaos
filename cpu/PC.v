@@ -10,6 +10,9 @@ module PC(
     output reg Decoder_enable,
     output reg [`addrWidth - 1 : 0] PC_Decoder,
     output reg [`instWidth - 1 : 0] inst_Decoder,
+    //input from Decoder
+    input wire branch_dest_valid_decoder,
+    input wire [`addrWidth  - 1 : 0] branch_dest_decoder,
     //input from alu
     input wire jump_dest_valid,
     input wire [`addrWidth  - 1 : 0] jump_dest,
@@ -112,6 +115,11 @@ module PC(
                         PC <= branch_dest;
                         rw_flag <= 1;
                         next_PC <= branch_dest + 4;
+                        PC_state <= STATE_OnRecv;
+                    end else if (branch_dest_valid_decoder) begin
+                        PC <= branch_dest_decoder;
+                        rw_flag <= 1;
+                        next_PC <= branch_dest_decoder + 4;
                         PC_state <= STATE_OnRecv;
                     end else begin
                         rw_flag <= 0;
