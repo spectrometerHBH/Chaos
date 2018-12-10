@@ -84,7 +84,8 @@ ACM Class CPU project
 [1] superloop  
 [1] tak  
 
-## Superscalar Out-of-Order CPU
-Dynamic sceduling : Tomasulo Algo
-Superscalar       : multiple issues(2 issues per lock at most) & FUs
-Memory Hierarchy  : 2-way associative ICache
+## Chaos CPU Feature
+Pipelining        : 3-stage pipeline(Fetch, Decode, Execution)  
+Dynamic sceduling : Tomasulo Algorithm  
+Superscalar       : Multiple Issues(2 issues per lock at most) & FUs  
+Memory Hierarchy  : 512B 2-way associative ICache  
