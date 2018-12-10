@@ -2,7 +2,6 @@
 ACM Class CPU project
 
 ## Feature
-
  Feature | RISC-V CPU
 --- | ---
 ISA | RISCV(RV32I subset) 
@@ -12,6 +11,7 @@ Superscalar | Multiple issues & FUs(2 issues per clock at most)
 Cache | 512B 2-way set associate I-cache 
 Memory | 128K BRAM on chip
 
+Pass all tests on FPGA(xc7a35tcpg236-1)
 ## RISCV32I Instruction Set 
 0 - unsupported  
 1 - waiting for test  
