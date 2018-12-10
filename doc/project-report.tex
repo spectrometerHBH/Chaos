@@ -78,7 +78,7 @@
 
 GitHub repository of my CPU project: \url{https://github.com/spectrometerHBH/Chaos}
 
-This project is a RISC-V CPU with Tomasulo Algorithm implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t).
+This project is a RISC-V CPU with Dynamic Sceduling and SuperScalar implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t).
 
 \section{Design}
 
@@ -92,69 +92,45 @@ Main features of this RISC-V CPU are briefly introduced in the table below.
 \toprule
 \multicolumn{1}{c}{Feature} & \multicolumn{1}{c}{RISC-V CPU}                                                                        \\ \midrule
 ISA                         & RISC-V RV32I subset\\
-<<<<<<< HEAD
-Pipelining                  & 4 stages(Fectch, Decoder, Excuction, Complete) \\
-Dynamic Sceduling           & Tomasulo Algorithm \\
-=======
 Clock Rate                  & 100MHz \\
 UART                        & Baudrate 115200 bit/s \\
-Pipelining                  & 4 stages(Fetch, Decode, Exexcution, Complete) \\
+Pipelining                  & 3 stages(Fetch, Decode, Execution) \\
 Dynamic Sceduling           & Tomasulo Algorithm \\
-Branch Policy               & stall \\
->>>>>>> 4e906b646bc46e13eed049c0837d33d97c74fcf4
-Cache                       & 512B direct indexed I-cache\\
+Superscalar                 & Multiple Issues(2 issues per clock at most) and FUs \\
+Cache                       & 512B 2-way associative I-cache\\
 Memory                      & 128K BRAM memory on chip \\ 
+Branch Policy               & stall \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsection{Design Graph}
+
+\begin{figure}[H]
+	\begin{center}
+	  \includegraphics[height=9cm]{structure.png}
+	\end{center}
+	\caption{Overview of CPU Design}
+\end{figure}
+
 \subsection{Specification}
-
-The CPU has a standard 5-stage pipeline with complete path data forwarding. Data produced by EX stage or MEM stage is passed to ID stage, which avoids most of RAW data hazard under ideal conditions (causes stall only if producer is a load instruction).
-
-The picture below shows structure of the CPU design, each module is implemented in a single verilog file. Red paths show the stall control flow, while orange ones show data forwarding path.
-
 \begin{itemize}
-	\item Instruction fetching, Load/Store instruction or data dependency may cause stall of pipeline, the logic of stall is managed by a stall controller module. It receives stall requests from IF/ID/MEM stage, and emit stall signals to modules that should pause.
-
-	\item For program test on FPGA without capable memory, the CPU uses UART protocol to communicate with PC, where runs a memory simulator written in C++.
-
-	\item Latency of UART communication makes it significant to use a cache, the cache is N-way associate using LRU replacement policy. It is based on code from Zhekai Zhang's MIPS CPU project.
+  \item Fetch - Fetcher module sends signal to cache and memctrl at the same time. $T_{hit}$ = 1, $T_{penalty} \leq 15$ 
+        If PC and PC+4 both hit in cache, Fetcher will send 2 instructions to Decode stage. 
+        Fetcher will stall PC when branching or jumping. 
+  \item Decode - Decoder and Dispatcher will decode the 2 instructions and allocate 2 locks to each of them. 
+                 Dispatcher will address the dependence between the two instructions. 
+  \item Execution - ALU reservation station will send at most 2 instructions to Execution stage.                
 \end{itemize}
 
-The CPU with cache and UART module passed simulation in Xilinx Vivado using multiple test programs. But something goes wrong when tested on FPGA (Basys 3), which is explained in the next section.
-
-\section{Thinkings}
-
-\paragraph{Efficiency} Time efficiency is always a significant issue in CPU design. When I wrote code for stall logic and Branch/Jump instruction processing part, I tried to minimize number of unused clock cycle. But when UART latency is considered, all of those optimization lose their meaning: UART communication is the only bottleneck of the pipeline, and even the pipeline is not a pipeline any more, for an instruction would goes through all stages before the next instruction is fetched. Though there is I-cache, it only works for loops. Therefore, UART may not be a perfect solution to memory simulation.
-
-\paragraph{Experience with FPGA} After cache and UART module passed simulation, I tested the CPU on Basys 3 FPGA, it read the first 5 instructions correctly but did not jump at the 5th instruction, which is a branch instruction. That test program did not go wrong in Vivado simulation. In the last two days before deadline I tried to find the bug but did not make it. Zhanghao Wu gave me a tutorial about always @ blocks\cite{always}, from which I learned about latch generation. My original design for stall control with IF stages caused some latch inferring, which could be "a
-terrible place for bugs"\cite{always}. I re-designed part of code to avoid latches, and found that it may need some more debugging. From this experience, I learned that some hidden trouble would not reveal itself in simulation. And I should have learned more about Verilog HDL before starting to write code.
-
-\paragraph{Automation} To compile and assemble test programs RISC-V toolchain and some other tools are used. Many commands are needed in this process. I \href{http://blog.evensgn.com/riscv-gnu-toolchain/}{wrote a Makefile} and found it really helpful. Automation improves efficiency and it feels good!
-
-\section{Acknowledgements}
-Special thanks would go to Zhanghao Wu (吴章昊) for his instructive discusstions and useful suggestions on this project. I would like to express my gratitude to TA Zhekai Zhang (张哲恺) as well, for his MIPS CPU project (especially the code of cache and UART module) and much work for this assignment. I am also indebted to many other classmates for their direct and indirect help to me.
-
 \begin{thebibliography}{9}
-  \bibitem{lsl}
-  	雷思磊.
-  	\emph{自己动手写CPU},
-  	电子工业出版社, 2014.
-  \bibitem{caqa} 
+  \bibitem{caaqa} 
 	John L. Hennessy, David A. Patterson, et al.
 	\emph{Computer Architecture: A Quantitative Approach},
-	Fifth Edition, 2012.
-  \bibitem{ppt}
-	David A. Patterson.
-	PPT of \emph{CS252 Graduate Computer Architecture},
-	2001.
-  \bibitem{zzk}
-  	Zhekai Zhang's (张哲恺) MIPS CPU project.
-  	\url{https://github.com/sxtyzhangzk/mips-cpu}
-  \bibitem{always}
-  	Chris Fletcher.
-  	\emph{\href{https://github.com/Evensgn/RISC-V-CPU/blob/dev/doc/Always@.pdf}{Verilog: always @ Blocks}}
+	Sixth Edition, 2019.
+  \bibitem{ridecore}
+  Arch Lab. in Tokyo Institute of Technology
+  \emph{\href{https://github.com/ridecore/ridecore}{RIDECORE (RIsc-v Dynamic Execution CORE)}}
   
 \end{thebibliography}
 
