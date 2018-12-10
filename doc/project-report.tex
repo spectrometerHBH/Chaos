@@ -75,11 +75,7 @@
 \maketitle
 
 \section{Introduction}
-
-GitHub repository of my CPU project: \url{https://github.com/spectrometerHBH/Chaos}
-
-This project is a RISC-V CPU with Dynamic Sceduling and SuperScalar implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t).
-
+This project is a RISC-V CPU with Dynamic Sceduling and Superscalar implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t).
 \section{Design}
 
 \subsection{Features}
@@ -91,37 +87,34 @@ Main features of this RISC-V CPU are briefly introduced in the table below.
 \begin{tabular}{@{}ll@{}}
 \toprule
 \multicolumn{1}{c}{Feature} & \multicolumn{1}{c}{RISC-V CPU}                                                                        \\ \midrule
-ISA                         & RISC-V RV32I subset\\
 Clock Rate                  & 100MHz \\
-UART                        & Baudrate 115200 bit/s \\
 Pipelining                  & 3 stages(Fetch, Decode, Execution) \\
 Dynamic Sceduling           & Tomasulo Algorithm \\
 Superscalar                 & Multiple Issues(2 issues per clock at most) and FUs \\
 Cache                       & 512B 2-way associative I-cache\\
-Memory                      & 128K BRAM memory on chip \\ 
 Branch Policy               & stall \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsection{Summerize}
+\begin{itemize}
+  \item At first, I implemented a 4-stage pipelined CPU with Tomasulo Algorithm and reorder buffer but without speculation and passed all tests on FPGA. Then I intended
+        to implement dynamic branch prediction as speculation, but I found it difficult to handle misprediction, which calls for complicate logic and design because of dynamic scheduling. 
+  \item Superscalar is another way to improve throughput, so I removed ROB in my design and made a 3-stage pipelined design with multiple issues. In testcase pi.c, it shortens
+        running time from 2.44s to 2.15s. Finally I changed the directed indexed I-Cache to 2-way associative cache to improve hit rate, which shortens pi.c to 2.0s under 100MHz.
+  \item In all, branch stall is still a main problem to handle, and such a relatively complicate design makes it more difficult to simply increase clock rate to decrease cpu time compared
+        with standard 5-staged pipeline, and I don't think it meaningful to do so as a course project work.  
+\end{itemize}
+
 \subsection{Design Graph}
 
 \begin{figure}[H]
 	\begin{center}
-	  \includegraphics[height=9cm]{structure.png}
+	  \includegraphics[height=10cm]{structure.png}
 	\end{center}
 	\caption{Overview of CPU Design}
 \end{figure}
-
-\subsection{Specification}
-\begin{itemize}
-  \item Fetch - Fetcher module sends signal to cache and memctrl at the same time. $T_{hit}$ = 1, $T_{penalty} \leq 15$ 
-        If PC and PC+4 both hit in cache, Fetcher will send 2 instructions to Decode stage. 
-        Fetcher will stall PC when branching or jumping. 
-  \item Decode - Decoder and Dispatcher will decode the 2 instructions and allocate 2 locks to each of them. 
-                 Dispatcher will address the dependence between the two instructions. 
-  \item Execution - ALU reservation station will send at most 2 instructions to Execution stage.                
-\end{itemize}
 
 \begin{thebibliography}{9}
   \bibitem{caaqa} 
