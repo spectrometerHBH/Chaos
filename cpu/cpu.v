@@ -34,10 +34,16 @@ module cpu(
     wire [`addrWidth - 1 : 0] core_mcu_addr[1 : 0];
     wire [1 : 0]              core_mcu_len[1 : 0];
     wire [`dataWidth - 1 : 0] core_mcu_data[1 : 0];
+    wire [`addrWidth - 1 : 0] core_mcu_PC2;
     wire [`dataWidth - 1 : 0] mcu_core_data[1 : 0];
     wire [1 : 0]              mcu_core_busy;
     wire [1 : 0]              mcu_core_done;
-
+    wire                      cache_hit1;
+    wire [`instWidth - 1 : 0] cache_data1;
+    wire                      cache_hit2;
+    wire [`instWidth - 1 : 0] cache_data2;
+    wire                      stall;
+    
     mem_ctrl mcu(
         .clk(clk),
         .rst(rst),
@@ -46,198 +52,430 @@ module cpu(
         .addr({core_mcu_addr[1], core_mcu_addr[0]}),
         .len({core_mcu_len[1], core_mcu_len[0]}),
         .data_in({core_mcu_data[1], core_mcu_data[0]}),
+        .PC_2(core_mcu_PC2),
         .data_out({mcu_core_data[1], mcu_core_data[0]}),
         .busy(mcu_core_busy),
         .done(mcu_core_done),
         .ram_rw_flag(mem_wr),
         .ram_addr(mem_a),
         .ram_data_out(mem_dout),
-        .ram_data_in(mem_din)        
+        .ram_data_in(mem_din),
+        .cache_hit1(cache_hit1),
+        .cache_inst1(cache_data1),
+        .cache_hit2(cache_hit2),
+        .cache_inst2(cache_data2)        
     );
     
-    wire [1 : 0]              pc_cache_rw_flag;
-    wire [`addrWidth - 1 : 0] pc_cache_addr;
-    wire [1 : 0]              pc_cache_len;
-    wire [`dataWidth - 1 : 0] cache_pc_data;
-    wire                      cache_pc_busy;
-    wire                      cache_pc_done;
-         
-    cache cache(
-        .clk(clk),
-        .rst(rst),
-        .rdy(rdy),
-        .rw_flag(pc_cache_rw_flag),
-        .PC(pc_cache_addr),
-        .len(pc_cache_len),
-        .data_out(cache_pc_data),
-        .cache_busy(cache_pc_busy),
-        .cache_done(cache_pc_done),
-        .rw_flag_out(core_mcu_rw_flag[0]),
-        .PC_out(core_mcu_addr[0]),
-        .len_out(core_mcu_len[0]),
-        .read_data(mcu_core_data[0]),
-        .mem_busy(mcu_core_busy[0]),
-        .mem_done(mcu_core_done[0])
-    );  
-    
-    wire                      if_dec_en;
-    wire [`addrWidth - 1 : 0] if_dec_pc;
-    wire [`instWidth - 1 : 0] if_dec_inst;
+    wire                      if_dec1_en;
+    wire [`addrWidth - 1 : 0] if_dec1_pc;
+    wire [`instWidth - 1 : 0] if_dec1_inst;
+    wire                      if_dec2_en;
+    wire [`addrWidth - 1 : 0] if_dec2_pc;
+    wire [`instWidth - 1 : 0] if_dec2_inst;  
+    wire                      alu_if_jump_dest_valid1;
+    wire [`addrWidth - 1 : 0] alu_if_jump_dest1;
+    wire                      alu_if_jump_dest_valid2;
+    wire [`addrWidth - 1 : 0] alu_if_jump_dest2;
     wire                      alu_if_jump_dest_valid;
-    wire [`addrWidth - 1 : 0] alu_if_jump_dest;
+    wire [`addrWidth - 1 : 0] alu_if_jump_dest;    
     wire                      branch_if_branch_dest_valid;
     wire [`addrWidth - 1 : 0] branch_if_branch_dest;
-    wire                      decoder_if_branch_dest_valid;
-    wire [`addrWidth - 1 : 0] decoder_if_branch_dest;
-    wire                      alu_if_alu_free;
-    wire                      rob_if_rob_free;
-    wire                      ls_if_ls_free;
+    wire                      alu_free;
+    wire                      ls_free;
+    
+    assign stall = (!alu_free) || (!ls_free);
+    assign alu_if_jump_dest_valid = alu_if_jump_dest_valid1 | alu_if_jump_dest_valid2;
+    assign alu_if_jump_dest = alu_if_jump_dest_valid1 ? alu_if_jump_dest1 : alu_if_jump_dest2;
     
     PC fetcher(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .Decoder_enable(if_dec_en),
-        .PC_Decoder(if_dec_pc),
-        .inst_Decoder(if_dec_inst),
-        .branch_dest_valid_decoder(decoder_if_branch_dest_valid),
-        .branch_dest_decoder(decoder_if_branch_dest),
+        .Decoder_enable1(if_dec1_en),
+        .PC_Decoder1(if_dec1_pc),
+        .inst_Decoder1(if_dec1_inst),
+        .Decoder_enable2(if_dec2_en),
+        .PC_Decoder2(if_dec2_pc),
+        .inst_Decoder2(if_dec2_inst),
         .jump_dest_valid(alu_if_jump_dest_valid),
         .jump_dest(alu_if_jump_dest),
         .branch_dest_valid(branch_if_branch_dest_valid),
         .branch_dest(branch_if_branch_dest),
-        .rw_flag(pc_cache_rw_flag),
-        .PC(pc_cache_addr),
-        .len(pc_cache_len),
-        .read_data(cache_pc_data),
-        .mem_busy(cache_pc_busy),
-        .mem_done(cache_pc_done),
-        .alu_free(alu_if_alu_free),
-        .ls_free(ls_if_ls_free),
-        .rob_free(rob_if_rob_free)
+        .rw_flag(core_mcu_rw_flag[0]),
+        .PC(core_mcu_addr[0]),
+        .len(core_mcu_len[0]),
+        .next_PC(core_mcu_PC2),
+        .read_data(mcu_core_data[0]),
+        .mem_busy(mcu_core_busy[0]),
+        .mem_done(mcu_core_done[0]),
+        .cache_hit1(cache_hit1),
+        .cache_data1(cache_data1),
+        .cache_hit2(cache_hit2),
+        .cache_data2(cache_data2),
+        .stall(stall)
     );
     
-    wire                      dec_alu_en;
-    wire [`aluWidth - 1 : 0]  dec_alu_data;
-    wire [`addrWidth - 1 : 0] dec_alu_inst_pc;
-    wire                      dec_branch_en;
-    wire [`branchWidth - 1 : 0] dec_branch_data;
-    wire [`addrWidth - 1 : 0] dec_branch_inst_pc;
-    wire                      dec_ls_en;
-    wire [`lsWidth - 1 : 0]   dec_ls_data;
-    wire                      rob_dec_tag1ready;
-    wire                      rob_dec_tag2ready;
-    wire                      rob_dec_tagdready;
-    wire [`tagWidth - 2 : 0]  rob_dec_robtail;
-    wire [`dataWidth - 1 : 0] rob_dec_robdata1;
-    wire [`dataWidth - 1 : 0] rob_dec_robdata2;
-    wire [`dataWidth - 1 : 0] rob_dec_robdatad;
-    wire                      dec_rob_en;
-    wire [`regWidth - 1 : 0]  dec_rob_data;
-    wire [`tagWidth - 1 : 0]  dec_rob_tagcheck1;
-    wire [`tagWidth - 1 : 0]  dec_rob_tagcheck2;
-    wire [`tagWidth - 1 : 0]  dec_rob_tagcheckd;
-    wire [`tagWidth - 1 : 0]  arf_dec_tag1;
-    wire [`tagWidth - 1 : 0]  arf_dec_tag2;
-    wire [`tagWidth - 1 : 0]  arf_dec_tagd;
-    wire [`dataWidth - 1 : 0] arf_dec_data1;
-    wire [`dataWidth - 1 : 0] arf_dec_data2;
-    wire [`dataWidth - 1 : 0] arf_dec_datad;
-    wire [`regWidth - 1 : 0]  dec_arf_addr1;
-    wire [`regWidth - 1 : 0]  dec_arf_addr2;
-    wire [`regWidth - 1 : 0]  dec_arf_addrd;
-    wire                      dec_arf_en;
-    wire [`regWidth - 1 : 0]  dec_arf_tagaddr;
-    wire [`tagWidth - 1 : 0]  dec_arf_tag;                       
-     
-    Decoder decoder(
-        .decoderEnable(if_dec_en),
-        .instToDecode(if_dec_inst),
-        .inst_PC(if_dec_pc),
-        .branch_dest_valid(decoder_if_branch_dest_valid),
-        .branch_dest(decoder_if_branch_dest),
-        .aluEnable(dec_alu_en),
-        .aluData(dec_alu_data),
-        .inst_PC_out_alu(dec_alu_inst_pc),
-        .branchEnable(dec_branch_en),
-        .branchData(dec_branch_data),
-        .inst_PC_out_branch(dec_branch_inst_pc),
-        .lsEnable(dec_ls_en),
-        .lsData(dec_ls_data),
-        .tag1Ready(rob_dec_tag1ready),
-        .tag2Ready(rob_dec_tag2ready),
-        .tagdReady(rob_dec_tagdready),
-        .ROBtail(rob_dec_robtail),
-        .robData1(rob_dec_robdata1),
-        .robData2(rob_dec_robdata2),
-        .robDatad(rob_dec_robdatad),
-        .robEnable(dec_rob_en),
-        .robData(dec_rob_data),
-        .tagCheck1(dec_rob_tagcheck1),
-        .tagCheck2(dec_rob_tagcheck2),
-        .tagCheckd(dec_rob_tagcheckd),
-        .regTag1(arf_dec_tag1),
-        .regTag2(arf_dec_tag2),
-        .regTagd(arf_dec_tagd),
-        .regData1(arf_dec_data1),
-        .regData2(arf_dec_data2),
-        .regDatad(arf_dec_datad),
-        .regAddr1(dec_arf_addr1),
-        .regAddr2(dec_arf_addr2),
-        .regAddrd(dec_arf_addrd),
-        .regEnable(dec_arf_en),
-        .regTagAddr(dec_arf_tagaddr),
-        .regTag(dec_arf_tag)
+    wire                dec1_dp_en;
+    wire [`classOpWidth - 1 : 0] classop_out1;
+    wire [`newopWidth   - 1 : 0] newop_out1;
+    wire [`addrWidth    - 1 : 0] inst_PC_out1;
+    wire [`reg_sel - 1 : 0] rs1_out1;
+    wire [`reg_sel - 1 : 0] rs2_out1;
+    wire [`reg_sel - 1 : 0] rd_out1;
+    wire [`addrWidth - 1 : 0] Imm_out1;
+    wire [`addrWidth  - 1 : 0] UImm_out1;
+    wire [`addrWidth  - 1 : 0] JImm_out1;
+    wire [`addrWidth  - 1 : 0] BImm_out1;
+    wire [`addrWidth  - 1 : 0] SImm_out1;
+    wire                       lock_prefix_1;
+    wire                       wr_rd_1;
+    Decoder decoder1(
+        .decoderEnable(if_dec1_en),
+        .instToDecode(if_dec1_inst),
+        .inst_PC(if_dec1_pc),
+        .dispatch_enable(dec1_dp_en),
+        .classop_out(classop_out1),
+        .newop_out(newop_out1),
+        .inst_PC_out(inst_PC_out1),
+        .rs1_out(rs1_out1),
+        .rs2_out(rs2_out1),
+        .rd_out(rd_out1),
+        .Imm_out(Imm_out1),
+        .UImm_out(UImm_out1),
+        .JImm_out(JImm_out1),
+        .BImm_out(BImm_out1),
+        .SImm_out(SImm_out1),
+        .lock_prefix(lock_prefix_1),
+        .wr_rd_out(wr_rd_1)
     );
     
-    wire ex_alu_en;
-    wire [`tagWidth - 1 : 0] ex_alu_rst_tag;
-    wire [`dataWidth - 1 : 0] ex_alu_rst_data;
+    wire                dec2_dp_en;
+    wire [`classOpWidth - 1 : 0] classop_out2;
+    wire [`newopWidth   - 1 : 0] newop_out2;
+    wire [`addrWidth    - 1 : 0] inst_PC_out2;
+    wire [`reg_sel - 1 : 0] rs1_out2;
+    wire [`reg_sel - 1 : 0] rs2_out2;
+    wire [`reg_sel - 1 : 0] rd_out2;
+    wire [`addrWidth - 1 : 0] Imm_out2;
+    wire [`addrWidth  - 1 : 0] UImm_out2;
+    wire [`addrWidth  - 1 : 0] JImm_out2;
+    wire [`addrWidth  - 1 : 0] BImm_out2;
+    wire [`addrWidth  - 1 : 0] SImm_out2;
+    wire lock_prefix_2;
+    wire wr_rd_2;
+    Decoder decoder2(
+        .decoderEnable(if_dec2_en),
+        .instToDecode(if_dec2_inst),
+        .inst_PC(if_dec2_pc),
+        .dispatch_enable(dec2_dp_en),
+        .classop_out(classop_out2),
+        .newop_out(newop_out2),
+        .inst_PC_out(inst_PC_out2),
+        .rs1_out(rs1_out2),
+        .rs2_out(rs2_out2),
+        .rd_out(rd_out2),
+        .Imm_out(Imm_out2),
+        .UImm_out(UImm_out2),
+        .JImm_out(JImm_out2),
+        .BImm_out(BImm_out2),
+        .SImm_out(SImm_out2),
+        .lock_prefix(lock_prefix_2),
+        .wr_rd_out(wr_rd_2)
+    );
+    
+    wire [5 : 0] alu_busy;
+    wire [5 : 0] alu_ready;
+    wire [2 : 0] alu_free_1;
+    wire [2 : 0] alu_free_2;
+    wire [2 : 0] alu_ready_1;
+    wire [2 : 0] alu_ready_2;
+    addr_table aoko(
+        .clk(clk),
+        .rst(rst),
+        .rdy(rdy),
+        .alu_busy(alu_busy),
+        .alu_ready(alu_ready),
+        .alu_free_1(alu_free_1),
+        .alu_free_2(alu_free_2),
+        .alu_ready_1(alu_ready_1),
+        .alu_ready_2(alu_ready_2)
+    );
+    
+    wire [`tagWidth - 1 : 0] reg_dp_tag1_1;
+    wire [`tagWidth - 1 : 0] reg_dp_tag2_1;
+    wire [`dataWidth - 1 : 0] reg_dp_data1_1;
+    wire [`dataWidth - 1 : 0] reg_dp_data2_1;
+    wire [`tagWidth - 1 : 0] reg_dp_tag1_2;
+    wire [`tagWidth - 1 : 0] reg_dp_tag2_2;
+    wire [`dataWidth - 1 : 0] reg_dp_data1_2;
+    wire [`dataWidth - 1 : 0] reg_dp_data2_2;
+    wire [`reg_sel - 1 : 0] dp_reg_regAddr1_1;
+    wire [`reg_sel - 1 : 0] dp_reg_regAddr2_1;
+    wire [`reg_sel - 1 : 0] dp_reg_regAddr1_2;
+    wire [`reg_sel - 1 : 0] dp_reg_regAddr2_2;
+    wire  dp_alu_enable_1;
+    wire  [`newopWidth - 1 : 0] dp_alu_op_1;
+    wire  [`dataWidth  - 1 : 0] dp_alu_data1_1;
+    wire  [`tagWidth   - 1 : 0] dp_alu_tag1_1;
+    wire  [`dataWidth  - 1 : 0] dp_alu_data2_1;
+    wire  [`tagWidth   - 1 : 0] dp_alu_tag2_1;
+    wire  [`addrWidth  - 1 : 0] dp_alu_PC_1;
+    wire  [`tagWidth   - 1 : 0] dp_alu_dest_1;
+    wire  [`reg_sel    - 1 : 0] dp_alu_reg_1;
+    wire  dp_alu_enable_2;
+    wire  [`newopWidth - 1 : 0] dp_alu_op_2;
+    wire  [`dataWidth  - 1 : 0] dp_alu_data1_2;
+    wire  [`tagWidth   - 1 : 0] dp_alu_tag1_2;
+    wire  [`dataWidth  - 1 : 0] dp_alu_data2_2;
+    wire  [`tagWidth   - 1 : 0] dp_alu_tag2_2;
+    wire  [`addrWidth  - 1 : 0] dp_alu_PC_2;
+    wire  [`tagWidth   - 1 : 0] dp_alu_dest_2;
+    wire  [`reg_sel    - 1 : 0] dp_alu_reg_2;
+    wire  dp_branch_enable;
+    wire  [`newopWidth - 1 : 0] dp_branch_op;
+    wire  [`dataWidth  - 1 : 0] dp_branch_data1;
+    wire  [`tagWidth   - 1 : 0] dp_branch_tag1;
+    wire  [`dataWidth  - 1 : 0] dp_branch_data2;
+    wire  [`tagWidth   - 1 : 0] dp_branch_tag2;
+    wire  [`addrWidth  - 1 : 0] dp_branch_offset;
+    wire  [`addrWidth  - 1 : 0] dp_branch_PC;
+    wire dp_ls_enable1;
+    wire [`newopWidth - 1 : 0] dp_ls_op_1;
+    wire [`dataWidth  - 1 : 0] dp_ls_base_1;
+    wire [`tagWidth   - 1 : 0] dp_ls_basetag_1;
+    wire [`dataWidth  - 1 : 0] dp_ls_src_1;
+    wire [`tagWidth   - 1 : 0] dp_ls_srctag_1;
+    wire [`addrWidth  - 1 : 0] dp_ls_Imm_1;
+    wire [`tagWidth   - 1 : 0] dp_ls_dest_1;
+    wire [`reg_sel    - 1 : 0] dp_ls_reg_1;
+    wire dp_ls_enable2;
+    wire [`newopWidth - 1 : 0] dp_ls_op_2;
+    wire [`dataWidth  - 1 : 0] dp_ls_base_2;
+    wire [`tagWidth   - 1 : 0] dp_ls_basetag_2;
+    wire [`dataWidth  - 1 : 0] dp_ls_src_2;
+    wire [`tagWidth   - 1 : 0] dp_ls_srctag_2;
+    wire [`addrWidth  - 1 : 0] dp_ls_Imm_2;
+    wire [`tagWidth   - 1 : 0] dp_ls_dest_2;
+    wire [`reg_sel    - 1 : 0] dp_ls_reg_2;
+    wire dp_reg_enable1;
+    wire [`reg_sel - 1 : 0] dp_reg_sel1;
+    wire [`tagWidth - 1 : 0] dp_reg_tag1;
+    wire dp_reg_enable2;
+    wire [`reg_sel - 1 : 0] dp_reg_sel2;
+    wire [`tagWidth - 1 : 0] dp_reg_tag2;
+    wire [2 : 0] ls_free_1;
+    wire [2 : 0] ls_free_2;
+    Dispatcher dispatcher(
+        .dispatch_enable1(dec1_dp_en),
+        .classop1(classop_out1),
+        .newop1(newop_out1),
+        .inst_PC1(inst_PC_out1),
+        .rs1_1(rs1_out1),
+        .rs2_1(rs2_out1),
+        .rd_1(rd_out1),
+        .Imm_1(Imm_out1),
+        .UImm_1(UImm_out1),
+        .JImm_1(JImm_out1),
+        .BImm_1(BImm_out1),
+        .SImm_1(SImm_out1),
+        .lock_prefix_1(lock_prefix_1),
+        .wr_rd_1(wr_rd_1),
+        .dispatch_enable2(dec2_dp_en),
+        .classop2(classop_out2),
+        .newop2(newop_out2),
+        .inst_PC2(inst_PC_out2),
+        .rs1_2(rs1_out2),
+        .rs2_2(rs2_out2),
+        .rd_2(rd_out2),
+        .Imm_2(Imm_out2),
+        .UImm_2(UImm_out2),
+        .JImm_2(JImm_out2),
+        .BImm_2(BImm_out2),
+        .SImm_2(SImm_out2),
+        .lock_prefix_2(lock_prefix_2),
+        .wr_rd_2(wr_rd_2),
+        .tag1_1(reg_dp_tag1_1),
+        .tag2_1(reg_dp_tag2_1),
+        .data1_1(reg_dp_data1_1),
+        .data2_1(reg_dp_data2_1),
+        .tag1_2(reg_dp_tag1_2),
+        .tag2_2(reg_dp_tag2_2),
+        .data1_2(reg_dp_data1_2),
+        .data2_2(reg_dp_data2_2),
+        .regAddr1_1(dp_reg_regAddr1_1),
+        .regAddr2_1(dp_reg_regAddr2_1),
+        .regAddr1_2(dp_reg_regAddr1_2),
+        .regAddr2_2(dp_reg_regAddr2_2),
+        .alu_enable_1(dp_alu_enable_1),
+        .alu_op_1(dp_alu_op_1),
+        .alu_data1_1(dp_alu_data1_1),
+        .alu_tag1_1(dp_alu_tag1_1),
+        .alu_data2_1(dp_alu_data2_1),
+        .alu_tag2_1(dp_alu_tag2_1),
+        .alu_PC_1(dp_alu_PC_1),
+        .alu_dest_1(dp_alu_dest_1),
+        .alu_reg_1(dp_alu_reg_1),
+        .alu_enable_2(dp_alu_enable_2),
+        .alu_op_2(dp_alu_op_2),
+        .alu_data1_2(dp_alu_data1_2),
+        .alu_tag1_2(dp_alu_tag1_2),
+        .alu_data2_2(dp_alu_data2_2),
+        .alu_tag2_2(dp_alu_tag2_2),
+        .alu_PC_2(dp_alu_PC_2),
+        .alu_dest_2(dp_alu_dest_2),
+        .alu_reg_2(dp_alu_reg_2),
+        .branch_enable(dp_branch_enable),
+        .branch_op(dp_branch_op),
+        .branch_data1(dp_branch_data1),
+        .branch_tag1(dp_branch_tag1),
+        .branch_data2(dp_branch_data2),
+        .branch_tag2(dp_branch_tag2),
+        .branch_offset(dp_branch_offset),
+        .branch_PC(dp_branch_PC),
+        .ls_enable1(dp_ls_enable1),
+        .ls_op_1(dp_ls_op_1),
+        .ls_base_1(dp_ls_base_1),
+        .ls_basetag_1(dp_ls_basetag_1),
+        .ls_src_1(dp_ls_src_1),
+        .ls_srctag_1(dp_ls_srctag_1),
+        .ls_Imm_1(dp_ls_Imm_1),
+        .ls_dest_1(dp_ls_dest_1),
+        .ls_reg_1(dp_ls_reg_1),
+        .ls_enable2(dp_ls_enable2),
+        .ls_op_2(dp_ls_op_2),
+        .ls_base_2(dp_ls_base_2),
+        .ls_basetag_2(dp_ls_basetag_2),
+        .ls_src_2(dp_ls_src_2),
+        .ls_srctag_2(dp_ls_srctag_2),
+        .ls_Imm_2(dp_ls_Imm_2),
+        .ls_dest_2(dp_ls_dest_2),
+        .ls_reg_2(dp_ls_reg_2),
+        .reg_enable1(dp_reg_enable1),
+        .reg_sel1(dp_reg_sel1),
+        .reg_tag1(dp_reg_tag1),
+        .reg_enable2(dp_reg_enable2),
+        .reg_sel2(dp_reg_sel2),
+        .reg_tag2(dp_reg_tag2),
+        .stall(stall),
+        .alu_free_1(alu_free_1),
+        .alu_free_2(alu_free_2),
+        .ls_free_1(ls_free_1),
+        .ls_free_2(ls_free_2)
+    );
+    
+    wire ex_alu_en1;
+    wire [`tagWidth - 1 : 0] ex_alu_rst_tag1;
+    wire [`dataWidth - 1 : 0] ex_alu_rst_data1;
+    wire [`reg_sel  - 1 : 0] ex_alu_rst_reg1;
+    wire ex_alu_en2;
+    wire [`tagWidth - 1 : 0] ex_alu_rst_tag2;
+    wire [`dataWidth - 1 : 0] ex_alu_rst_data2;
+    wire [`reg_sel  - 1 : 0] ex_alu_rst_reg2;
     wire ex_mem_en;
     wire [`tagWidth - 1 : 0] ex_mem_rst_tag;
     wire [`dataWidth - 1 : 0] ex_mem_rst_data;
+    wire [`reg_sel  - 1 : 0] ex_mem_rst_reg;
     
-    wire alu_ex_en;
-    wire [`dataWidth - 1 : 0] alu_exsrc1;
-    wire [`dataWidth - 1 : 0] alu_exsrc2;
-    wire [`addrWidth - 1 : 0] alu_expc;
-    wire [`newopWidth - 1 : 0] alu_exaluop;
-    wire [`tagWidth - 1 : 0]  alu_exdest;
+    wire alu_ex_en_1;
+    wire [`dataWidth - 1 : 0] alu_exsrc1_1;
+    wire [`dataWidth - 1 : 0] alu_exsrc2_1;
+    wire [`addrWidth - 1 : 0] alu_expc_1;
+    wire [`newopWidth - 1 : 0] alu_exaluop_1;
+    wire [`tagWidth - 1 : 0]  alu_exdest_1;
+    wire [`reg_sel - 1 : 0] alu_reg_1;
+    wire alu_ex_en_2;
+    wire [`dataWidth - 1 : 0] alu_exsrc1_2;
+    wire [`dataWidth - 1 : 0] alu_exsrc2_2;
+    wire [`addrWidth - 1 : 0] alu_expc_2;
+    wire [`newopWidth - 1 : 0] alu_exaluop_2;
+    wire [`tagWidth - 1 : 0]  alu_exdest_2;
+    wire [`reg_sel - 1 : 0] alu_reg_2;
     
     rs_alu rs_alu(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .alloc_enable(dec_alu_en),
-        .decoder_data(dec_alu_data),
-        .inst_PC(dec_alu_inst_pc),
-        .en_alu_rst(ex_alu_en),
-        .alu_rst_tag(ex_alu_rst_tag),
-        .alu_rst_data(ex_alu_rst_data),
+        .alu_enable_1(dp_alu_enable_1),
+        .alu_op_1(dp_alu_op_1),
+        .alu_data1_1(dp_alu_data1_1),
+        .alu_tag1_1(dp_alu_tag1_1),
+        .alu_data2_1(dp_alu_data2_1),
+        .alu_tag2_1(dp_alu_tag2_1),
+        .alu_PC_1(dp_alu_PC_1),
+        .alu_dest_1(dp_alu_dest_1),
+        .alu_reg_1(dp_alu_reg_1),
+        .alu_enable_2(dp_alu_enable_2),
+        .alu_op_2(dp_alu_op_2),
+        .alu_data1_2(dp_alu_data1_2),
+        .alu_tag1_2(dp_alu_tag1_2),
+        .alu_data2_2(dp_alu_data2_2),
+        .alu_tag2_2(dp_alu_tag2_2),
+        .alu_PC_2(dp_alu_PC_2),
+        .alu_dest_2(dp_alu_dest_2),
+        .alu_reg_2(dp_alu_reg_2),
+        .en_alu_rst1(ex_alu_en1),
+        .alu_rst_tag1(ex_alu_rst_tag1),
+        .alu_rst_data1(ex_alu_rst_data1),
+        .en_alu_rst2(ex_alu_en2),
+        .alu_rst_tag2(ex_alu_rst_tag2),
+        .alu_rst_data2(ex_alu_rst_data2),
         .en_mem_rst(ex_mem_en),
         .mem_rst_tag(ex_mem_rst_tag),
         .mem_rst_data(ex_mem_rst_data),
-        .ex_alu_en(alu_ex_en),
-        .exsrc1_out(alu_exsrc1),
-        .exsrc2_out(alu_exsrc2),
-        .expc_out(alu_expc),
-        .exaluop_out(alu_exaluop),
-        .exdest_out(alu_exdest),
-        .rs_alu_free(alu_if_alu_free)
+        .ex_alu_en1(alu_ex_en_1),
+        .exsrc1_out1(alu_exsrc1_1),
+        .exsrc2_out1(alu_exsrc2_1),
+        .expc_out1(alu_expc_1),
+        .exaluop_out1(alu_exaluop_1),
+        .exdest_out1(alu_exdest_1),
+        .exreg_out1(alu_reg_1),
+        .ex_alu_en2(alu_ex_en_2),
+        .exsrc1_out2(alu_exsrc1_2),
+        .exsrc2_out2(alu_exsrc2_2),
+        .expc_out2(alu_expc_2),
+        .exaluop_out2(alu_exaluop_2),
+        .exdest_out2(alu_exdest_2),
+        .exreg_out2(alu_reg_2),
+        .rs_alu_free(alu_free),
+        .busy(alu_busy),
+        .ready(alu_ready),
+        .stall(stall),
+        .alloc_addr_1(alu_free_1),
+        .alloc_addr_2(alu_free_2),
+        .issue_addr_1(alu_ready_1),
+        .issue_addr_2(alu_ready_2)
     );
     
-    ex_alu ex_alu(
-        .ex_alu_en(alu_ex_en),
-        .exsrc1(alu_exsrc1),
-        .exsrc2(alu_exsrc2),
-        .expc(alu_expc),
-        .exaluop(alu_exaluop),
-        .exdest(alu_exdest),
-        .en_rst(ex_alu_en),
-        .rst_data(ex_alu_rst_data),
-        .rst_tag(ex_alu_rst_tag),
-        .jump_dest_valid(alu_if_jump_dest_valid),
-        .jump_dest(alu_if_jump_dest)
+    ex_alu ex_alu_1(
+        .ex_alu_en(alu_ex_en_1),
+        .exsrc1(alu_exsrc1_1),
+        .exsrc2(alu_exsrc2_1),
+        .expc(alu_expc_1),
+        .exaluop(alu_exaluop_1),
+        .exdest(alu_exdest_1),
+        .exreg(alu_reg_1),
+        .en_rst(ex_alu_en1),
+        .rst_data(ex_alu_rst_data1),
+        .rst_tag(ex_alu_rst_tag1),
+        .rst_reg(ex_alu_rst_reg1),
+        .jump_dest_valid(alu_if_jump_dest_valid1),
+        .jump_dest(alu_if_jump_dest1)
+    );
+    
+    ex_alu ex_alu_2(
+        .ex_alu_en(alu_ex_en_2),
+        .exsrc1(alu_exsrc1_2),
+        .exsrc2(alu_exsrc2_2),
+        .expc(alu_expc_2),
+        .exaluop(alu_exaluop_2),
+        .exdest(alu_exdest_2),
+        .exreg(alu_reg_2),
+        .en_rst(ex_alu_en2),
+        .rst_data(ex_alu_rst_data2),
+        .rst_tag(ex_alu_rst_tag2),
+        .rst_reg(ex_alu_rst_reg2),
+        .jump_dest_valid(alu_if_jump_dest_valid2),
+        .jump_dest(alu_if_jump_dest2)
     );
     
     wire branch_ex_en;
@@ -251,12 +489,20 @@ module cpu(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .alloc_enable(dec_branch_en),
-        .decoder_data(dec_branch_data),
-        .inst_PC(dec_branch_inst_pc),
-        .en_alu_rst(ex_alu_en),
-        .alu_rst_tag(ex_alu_rst_tag),
-        .alu_rst_data(ex_alu_rst_data),
+        .branch_enable(dp_branch_enable),
+        .branch_op(dp_branch_op),
+        .branch_data1(dp_branch_data1),
+        .branch_tag1(dp_branch_tag1),
+        .branch_data2(dp_branch_data2),
+        .branch_tag2(dp_branch_tag2),
+        .branch_PC(dp_branch_PC),
+        .branch_offset(dp_branch_offset),
+        .en_alu_rst1(ex_alu_en1),
+        .alu_rst_tag1(ex_alu_rst_tag1),
+        .alu_rst_data1(ex_alu_rst_data1),
+        .en_alu_rst2(ex_alu_en2),
+        .alu_rst_tag2(ex_alu_rst_tag2),
+        .alu_rst_data2(ex_alu_rst_data2),
         .en_mem_rst(ex_mem_en),
         .mem_rst_tag(ex_mem_rst_tag),
         .mem_rst_data(ex_mem_rst_data),
@@ -265,7 +511,8 @@ module cpu(
         .exsrc2_out(branch_exsrc2),
         .expc_out(branch_expc),
         .exaluop_out(branch_exaluop),
-        .exoffset_out(branch_exoffset)
+        .exoffset_out(branch_exoffset),
+        .stall(stall)
     );
     
     ex_branch ex_branch(
@@ -285,16 +532,36 @@ module cpu(
     wire [`dataWidth - 1 : 0] ls_exreg;
     wire [`newopWidth - 1 : 0] ls_exlsop;
     wire [`tagWidth - 1 : 0]  ls_exdest;
-    
+    wire [`reg_sel - 1 : 0] ls_exdreg;
+     
     lsbuffer lsbuffer(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .alloc_enable(dec_ls_en),
-        .decoder_data(dec_ls_data),
-        .en_alu_rst(ex_alu_en),
-        .alu_rst_tag(ex_alu_rst_tag),
-        .alu_rst_data(ex_alu_rst_data),
+        .ls_enable_1(dp_ls_enable1),
+        .ls_op_1(dp_ls_op_1),
+        .ls_base_1(dp_ls_base_1),
+        .ls_basetag_1(dp_ls_basetag_1),
+        .ls_src_1(dp_ls_src_1),
+        .ls_srctag_1(dp_ls_srctag_1),
+        .ls_Imm_1(dp_ls_Imm_1),
+        .ls_dest_1(dp_ls_dest_1),
+        .ls_reg_1(dp_ls_reg_1),
+        .ls_enable_2(dp_ls_enable2),
+        .ls_op_2(dp_ls_op_2),
+        .ls_base_2(dp_ls_base_2),
+        .ls_basetag_2(dp_ls_basetag_2),
+        .ls_src_2(dp_ls_src_2),
+        .ls_srctag_2(dp_ls_srctag_2),
+        .ls_Imm_2(dp_ls_Imm_2),
+        .ls_dest_2(dp_ls_dest_2),
+        .ls_reg_2(dp_ls_reg_2),
+        .en_alu_rst1(ex_alu_en1),
+        .alu_rst_tag1(ex_alu_rst_tag1),
+        .alu_rst_data1(ex_alu_rst_data1),
+        .en_alu_rst2(ex_alu_en2),
+        .alu_rst_tag2(ex_alu_rst_tag2),
+        .alu_rst_data2(ex_alu_rst_data2),
         .en_mem_rst(ex_mem_en),
         .mem_rst_tag(ex_mem_rst_tag),
         .mem_rst_data(ex_mem_rst_data),
@@ -305,7 +572,11 @@ module cpu(
         .exreg_out(ls_exreg),
         .exlsop_out(ls_exlsop),
         .exdest_out(ls_exdest),
-        .lsbuffer_free(ls_if_ls_free)
+        .exdreg_out(ls_exdreg),
+        .stall(stall),
+        .allocate_addr_1(ls_free_1),
+        .allocate_addr_2(ls_free_2),
+        .lsbuffer_free(ls_free)
     );
     
     ex_ls ex_ls(
@@ -318,10 +589,12 @@ module cpu(
         .ex_reg(ls_exreg),
         .ex_lsop(ls_exlsop),
         .ex_dest(ls_exdest),
+        .ex_dreg(ls_exdreg),
         .ex_ls_done(ex_ls_done),
         .en_rst(ex_mem_en),
         .rst_data(ex_mem_rst_data),
         .rst_tag(ex_mem_rst_tag),
+        .rst_reg(ex_mem_rst_reg),
         .rw_flag(core_mcu_rw_flag[1]),
         .addr(core_mcu_addr[1]),
         .write_data(core_mcu_data[1]),
@@ -331,59 +604,40 @@ module cpu(
         .mem_done(mcu_core_done[1])
     );
     
-    wire rob_arf_en;
-    wire [`regWidth - 1 : 0] rob_arf_addr;
-    wire [`dataWidth - 1 : 0] rob_arf_data;
-    wire [`tagWidth - 1 : 0] rob_arf_tag;
-    
-    ROB reorder_buf(
-        .clk(clk),
-        .rst(rst),
-        .rdy(rdy),
-        .decoder_tag1(dec_rob_tagcheck1),
-        .decoder_tag2(dec_rob_tagcheck2),
-        .decoder_tagd(dec_rob_tagcheckd),
-        .alloc_en(dec_rob_en),
-        .alloc_data(dec_rob_data),
-        .alloc_ptr(rob_dec_robtail),
-        .decoder_tag1ready(rob_dec_tag1ready),
-        .decoder_tag2ready(rob_dec_tag2ready),
-        .decoder_tagdready(rob_dec_tagdready),
-        .decoder_tag1data(rob_dec_robdata1),
-        .decoder_tag2data(rob_dec_robdata2),
-        .decoder_tagddata(rob_dec_robdatad),
-        .com_en(rob_arf_en),
-        .com_addr(rob_arf_addr),
-        .com_data(rob_arf_data),
-        .com_tag(rob_arf_tag),
-        .alu_rst_en(ex_alu_en),
-        .alu_rst_data(ex_alu_rst_data),
-        .alu_rst_tag(ex_alu_rst_tag),
-        .mem_rst_en(ex_mem_en),
-        .mem_rst_data(ex_mem_rst_data),
-        .mem_rst_tag(ex_mem_rst_tag),
-        .rob_free(rob_if_rob_free)
-    );
-    
     Regfile arf(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .enWrite(rob_arf_en),
-        .namew(rob_arf_addr),
-        .dataw(rob_arf_data),
-        .tagw(rob_arf_tag),
-        .enDecoderw(dec_arf_en),
-        .regDecoderw(dec_arf_tagaddr),
-        .tagDecoderw(dec_arf_tag),
-        .name1(dec_arf_addr1),
-        .tag1(arf_dec_tag1),
-        .data1(arf_dec_data1),
-        .name2(dec_arf_addr2),
-        .tag2(arf_dec_tag2),
-        .data2(arf_dec_data2),
-        .name3(dec_arf_addrd),
-        .tag3(arf_dec_tagd),
-        .data3(arf_dec_datad)
+        .dp_en_1(dp_reg_enable1),
+        .selw_1(dp_reg_sel1),
+        .tagw_1(dp_reg_tag1),
+        .dp_en_2(dp_reg_enable2),
+        .selw_2(dp_reg_sel2),
+        .tagw_2(dp_reg_tag2),
+        .ex_alu_en_1(ex_alu_en1),
+        .ex_alu_data_1(ex_alu_rst_data1),
+        .ex_alu_reg_1(ex_alu_rst_reg1),
+        .ex_alu_tag_1(ex_alu_rst_tag1),
+        .ex_alu_en_2(ex_alu_en2),
+        .ex_alu_data_2(ex_alu_rst_data2),
+        .ex_alu_reg_2(ex_alu_rst_reg2),
+        .ex_alu_tag_2(ex_alu_rst_tag2),
+        .ex_ls_en(ex_mem_en),
+        .ex_ls_data(ex_mem_rst_data),
+        .ex_ls_reg(ex_mem_rst_reg),
+        .ex_ls_tag(ex_mem_rst_tag),
+        .sel_1(dp_reg_regAddr1_1),
+        .tag_1(reg_dp_tag1_1),
+        .data_1(reg_dp_data1_1),
+        .sel_2(dp_reg_regAddr2_1),
+        .tag_2(reg_dp_tag2_1),
+        .data_2(reg_dp_data2_1),
+        .sel_3(dp_reg_regAddr1_2),
+        .tag_3(reg_dp_tag1_2),
+        .data_3(reg_dp_data1_2),
+        .sel_4(dp_reg_regAddr2_2),
+        .tag_4(reg_dp_tag2_2),
+        .data_4(reg_dp_data2_2),
+        .stall(stall)
     );
 endmodule

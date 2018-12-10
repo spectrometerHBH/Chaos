@@ -84,5 +84,8 @@ ACM Class CPU project
 [1] superloop  
 [1] tak  
 
-## Tomasulo
-Tomasulo with ROB, but without speculation
+## Chaos CPU Feature
+Pipelining        : 3-stage pipeline(Fetch, Decode, Execution)  
+Dynamic sceduling : Tomasulo Algorithm  
+Superscalar       : Multiple Issues(2 issues per lock at most) & FUs  
+Memory Hierarchy  : 512B 2-way associative ICache  
