@@ -1,6 +1,16 @@
 # Chaos
 ACM Class CPU project
 
+## Feature
+
+ Feature | RISC-V CPU
+--- | ---
+ISA | RISCV(RV32I subset) 
+Pipelining | 3 stages(Fetch, Decode, Execution)  
+Dynamic Scheduling | Tomasulo Algorithm
+Superscalar | Multiple issues & FUs(2 issues per clock at most)
+Cache | 512B 2-way set associate I-cache 
+Memory | 128K BRAM on chip
 
 ## RISCV32I Instruction Set 
 0 - unsupported  
@@ -83,10 +93,3 @@ ACM Class CPU project
 [1] statement_test  
 [1] superloop  
 [1] tak  
-
-## Chaos CPU Feature
-Pass all tests on FPGA(xc7a35tcpg236-1)
-| Pipelining | 3-stage pipeline(Fetch, Decode, Execution)  |
-| Dynamic sceduling | Tomasulo Algorithm  |
-| Superscalar | Multiple Issues(2 issues per lock at most) & FUs  |
-| Memory Hierarchy | 512B 2-way associative ICache |
