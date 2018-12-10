@@ -92,10 +92,13 @@ Main features of this RISC-V CPU are briefly introduced in the table below.
 \toprule
 \multicolumn{1}{c}{Feature} & \multicolumn{1}{c}{RISC-V CPU}                                                                        \\ \midrule
 ISA                         & RISC-V RV32I subset\\
-Pipelining                  & 5 stages \\
-Dynamic Sceduling           & Tomasulo Algorihm \\
+Clock Rate                  & 100MHz \\
+UART                        & Baudrate 115200 bit/s \\
+Pipelining                  & 4 stages(Fetch, Decode, Exexcution, Complete) \\
+Dynamic Sceduling           & Tomasulo Algorithm \\
+Branch Policy               & stall \\
 Cache                       & 512B direct indexed I-cache\\
-Memory                      & 128K bram memory on chip \\ 
+Memory                      & 128K BRAM memory on chip \\ 
 \bottomrule
 \end{tabular}
 \end{table}

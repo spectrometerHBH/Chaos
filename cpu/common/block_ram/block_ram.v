@@ -79,7 +79,7 @@ always @(posedge clk)
   begin
     if (we) begin
         ram[addr_a] <= din_a;
-        $display("write ram[%x] = 0x%h", addr_a, din_a);
+        $display("          write ram[%x] = 0x%h", addr_a, din_a);
     end
     q_addr_a <= addr_a;
   end
@@ -93,6 +93,7 @@ initial begin
     ram[i] = 0;
   end
   $readmemh("/home/spectrometer/Arch2018/riscv/test/test.data", ram); // add test.data to vivado project or specify a valid file path
+  //$readmemh("/home/spectrometer/Chaos/data/test.data", ram); // add test.data to vivado project or specify a valid file path
   for (i=0;i<32;i=i+1) begin
     $display("ram[%d] = 0x%b", i, ram[i]);  
   end

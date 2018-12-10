@@ -237,7 +237,7 @@ always @*
               d_tx_data = io_din;
               d_wr_en   = 1'b1;
             end
-            $write("write ram[30000] = 0x%h", io_din);
+            $write("write ram[30000] = 0x%h\n", io_din, io_din);
           end
           3'h04: begin      // 0x30004 write: indicates program stop
             if (!tx_full) begin

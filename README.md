@@ -84,5 +84,7 @@ ACM Class CPU project
 [1] superloop  
 [1] tak  
 
-## Tomasulo
-Tomasulo with ROB, but without speculation
+## Superscalar Out-of-Order CPU
+Dynamic sceduling : Tomasulo Algo
+Superscalar       : multiple issues(2 issues per lock at most) & FUs
+Memory Hierarchy  : 2-way associative ICache

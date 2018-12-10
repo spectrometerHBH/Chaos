@@ -11,12 +11,14 @@ module ex_ls(
     input wire [`dataWidth - 1 : 0] ex_reg,
     input wire [`newopWidth - 1 : 0] ex_lsop,
     input wire [`tagWidth - 1 : 0] ex_dest,
+    input wire [`reg_sel - 1 : 0] ex_dreg,
     //output to lsbuffer
     output wire ex_ls_done,
     //output to FU & ROB
     output reg en_rst,
     output reg [`dataWidth - 1 : 0] rst_data,
     output reg [`tagWidth - 1 : 0] rst_tag,
+    output reg [`reg_sel - 1 : 0] rst_reg,
     //output to mem_ctrl
     output reg [1 : 0] rw_flag,
     output reg [`addrWidth - 1 : 0] addr,
@@ -44,6 +46,7 @@ module ex_ls(
             en_rst <= 0;
             rst_data <= 0;
             rst_tag <= `tagFree;
+            rst_reg <= 0;
             write_data <= 0;
             unsign <= 0;
         end else if (rdy) begin
@@ -57,36 +60,42 @@ module ex_ls(
                                 rw_flag <= 2'b01;
                                 len <= 2'b00;    
                                 rst_tag <= ex_dest;
+                                rst_reg <= ex_dreg;
                                 unsign <= 0;
                             end
                             `LH : begin
                                 rw_flag <= 2'b01;
                                 len <= 2'b01;
                                 rst_tag <= ex_dest;
+                                rst_reg <= ex_dreg;
                                 unsign <= 0;
                             end
                             `LW : begin
                                 rw_flag <= 2'b01;
                                 len <= 2'b11;
                                 rst_tag <= ex_dest;
+                                rst_reg <= ex_dreg;
                                 unsign <= 0;
                             end
                             `LBU : begin
                                 rw_flag <= 2'b01;
                                 len <= 2'b00;
                                 rst_tag <= ex_dest;
+                                rst_reg <= ex_dreg;
                                 unsign <= 1;
                             end
                             `LHU : begin
                                 rw_flag <= 2'b01;
                                 len <= 2'b01;
                                 rst_tag <= ex_dest;
+                                rst_reg <= ex_dreg;
                                 unsign <= 1;
                             end
                             `SB : begin
                                 rw_flag <= 2'b10;
                                 len <= 2'b00;
                                 rst_tag <= `tagFree;
+                                rst_reg <= 0;
                                 write_data <= ex_reg;
                                 unsign <= 0;
                             end
@@ -94,6 +103,7 @@ module ex_ls(
                                 rw_flag <= 2'b10;
                                 len <= 2'b01; 
                                 rst_tag <= `tagFree;
+                                rst_reg <= 0;
                                 write_data <= ex_reg;
                                 unsign <= 0;
                             end
@@ -101,6 +111,7 @@ module ex_ls(
                                 rw_flag <= 2'b10;
                                 len <= 2'b11;
                                 rst_tag <= `tagFree;
+                                rst_reg <= 0;
                                 write_data <= ex_reg;
                                 unsign <= 0;
                             end
@@ -114,6 +125,7 @@ module ex_ls(
                         en_rst <= 0;
                         rst_data <= 0;
                         rst_tag <= `tagFree;
+                        rst_reg <= 0;
                         write_data <= 0;
                         unsign <= 0;
                     end   

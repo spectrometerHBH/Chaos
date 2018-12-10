@@ -10,10 +10,12 @@ module ex_alu(
     input wire [`addrWidth - 1 : 0] expc,
     input wire [`newopWidth - 1 : 0] exaluop,
     input wire [`tagWidth - 1 : 0] exdest,
+    input wire [`reg_sel - 1 : 0] exreg,
     //output to FU & rob
     output reg en_rst,
     output reg [`dataWidth - 1 : 0] rst_data,
     output reg [`tagWidth  - 1 : 0] rst_tag,
+    output reg [`reg_sel - 1 : 0] rst_reg,
     //output to PC
     output reg jump_dest_valid,
     output reg [`addrWidth - 1 : 0] jump_dest
@@ -23,11 +25,13 @@ module ex_alu(
         en_rst = 0;
         rst_data = 0;
         rst_tag = `tagFree;
+        rst_reg = 0;
         jump_dest_valid = 0;
         jump_dest = 0;
         if (ex_alu_en) begin
             en_rst = 1;      
             rst_tag = exdest;
+            rst_reg = exreg;
             case (exaluop) 
                 `ADD  : rst_data = $signed(exsrc1) +   $signed(exsrc2);
                 `SUB  : rst_data = $signed(exsrc1) -   $signed(exsrc2);
