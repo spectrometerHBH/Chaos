@@ -78,7 +78,7 @@
 
 GitHub repository of my CPU project: \url{https://github.com/spectrometerHBH/Chaos}
 
-This project is a RISC-V CPU with Tomasulo Algorithm implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t). 
+This project is a RISC-V CPU with Tomasulo Algorithm implemented in Verilog HDL, which is runnable on FPGA(tested on xc7a35t).
 
 \section{Design}
 
@@ -92,8 +92,8 @@ Main features of this RISC-V CPU are briefly introduced in the table below.
 \toprule
 \multicolumn{1}{c}{Feature} & \multicolumn{1}{c}{RISC-V CPU}                                                                        \\ \midrule
 ISA                         & RISC-V RV32I subset\\
-Pipelining                  & 5 stages \\
-Dynamic Sceduling           & Tomasulo Algorihm \\
+Pipelining                  & 4 stages(Fectch, Decoder, Excuction, Complete) \\
+Dynamic Sceduling           & Tomasulo Algorithm \\
 Cache                       & 512B direct indexed I-cache\\
 Memory                      & 128K bram memory on chip \\ 
 \bottomrule
