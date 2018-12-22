@@ -8,7 +8,8 @@ ISA | RISCV(RV32I subset)
 Pipelining | 3 stages(Fetch, Decode, Execution)  
 Dynamic Scheduling | Tomasulo Algorithm
 Superscalar | Multiple issues & FUs(2 issues per clock at most)
-Cache | 512B 2-way set associate I-cache 
+Cache | 512B 2-way set associate I-cache
+Dynamic Speculation | 64-entry gshared Predictor(Working under 50Mhz and not included in final commit)
 Memory | 128K BRAM on chip
 
 Pass all tests on FPGA(xc7a35tcpg236-1)
