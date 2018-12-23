@@ -2,17 +2,29 @@
 ACM Class CPU project
 
 ## Feature
- Feature | RISC-V CPU
+ Feature | RISC-V CPU(version1, final version)
 --- | ---
 ISA | RISCV(RV32I subset) 
+CLOCK RATE | 100MHz 
 Pipelining | 3 stages(Fetch, Decode, Execution)  
 Dynamic Scheduling | Tomasulo Algorithm
 Superscalar | Multiple issues & FUs(2 issues per clock at most)
 Cache | 512B 2-way set associate I-cache
-Dynamic Speculation | 64-entry gshared Predictor(Working under 50Mhz and not included in final commit)
 Memory | 128K BRAM on chip
 
-Pass all tests on FPGA(xc7a35tcpg236-1)
+Feature | RISC-V CPU(version2, slower than version1)
+--- | ---
+ISA | RISCV(RV32I subset) 
+CLOLK RATE | 50MHz
+Pipelining | 5 stages(Fetch, Decode, Dispatch, Execution, Commit)  
+Dynamic Scheduling | Tomasulo Algorithm
+Superscalar | Multiple issues & FUs(2 issues per clock at most)
+Dynamic Speculation | 64-entry gshared Predictor
+Cache | 512B 2-way set associate I-cache
+Memory | 128K BRAM on chip
+
+Both versions pass all tests on FPGA(xc7a35tcpg236-1)
+
 ## RISCV32I Instruction Set 
 0 - unsupported  
 1 - waiting for test  
