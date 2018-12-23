@@ -22,6 +22,7 @@ Superscalar | Multiple issues & FUs(2 issues per clock at most)
 Dynamic Speculation | 64-entry gshared Predictor
 Cache | 512B 2-way set associative I-cache
 Memory | 128K BRAM on chip
+Notes | It's an experimental version, which is potential but not powerful now
 
 Both versions pass all tests on FPGA(xc7a35tcpg236-1)
 
