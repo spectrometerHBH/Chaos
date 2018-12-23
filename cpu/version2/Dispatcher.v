@@ -59,11 +59,13 @@ module Dispatcher(
      output reg rob_enable1,
      output wire isbranch1,
      output reg wr_rd1,
-     output reg [`reg_sel - 1 : 0] rob_dest1,
+     output reg [`reg_sel   - 1 : 0] rob_dest1,
+     output reg [`indexWidth - 1 : 0] rob_PC1,
      output reg rob_enable2,
      output wire isbranch2,
      output reg wr_rd2,
      output reg [`reg_sel - 1 : 0] rob_dest2,
+     output reg [`indexWidth - 1 : 0] rob_PC2,
      //input from ROB
      input wire ready1_1,
      input wire [`dataWidth - 1 : 0] data1_1_rob,
@@ -206,14 +208,17 @@ module Dispatcher(
         reg_sel2 = 0;
         reg_tag2 = `tagFree;
         rob_enable1 = 0;
+        rob_PC1 = 0;
         rob_dest1 = 0;
         rob_enable2 = 0;
         rob_dest2 = 0;
+        rob_PC2 = 0;
         wr_rd1 = 0;
         wr_rd2 = 0;
         if (dispatch_enable1) begin
             rob_enable1 = 1;
             rob_dest1 = rd_1;
+            rob_PC1 = inst_PC1[`indexWidth + 1 : 2];
             wr_rd1 = wr_rd_1;
             case (classop1)
                 `classRI : begin
@@ -328,6 +333,7 @@ module Dispatcher(
             if (dispatch_enable2) begin
                 rob_enable2 = 1; 
                 rob_dest2 = rd_2;
+                rob_PC2 = inst_PC2[`indexWidth + 1 : 2];
                 wr_rd2 = wr_rd_2;
                 case (classop2)
                     `classRI : begin

@@ -132,6 +132,7 @@ module cpu(
     );
     
     wire rob_pdt_en, rob_pdt_choice;
+    wire [`indexWidth - 1 : 0] rob_pdt_PC;
     
     predictor GodKnows(
         .clk(clk),
@@ -144,6 +145,7 @@ module cpu(
         .predict1(pdt_if_predict1),
         .predict2(pdt_if_predict2),
         .modify_en(rob_pdt_en),
+        .modify_PC(rob_pdt_PC),
         .clear(clear),
         .choice(rob_pdt_choice)    
     );
@@ -347,6 +349,7 @@ module cpu(
     wire [`tagWidth - 1 : 0] dp_reg_tag2;
     wire [`rob_sel - 1 : 0] rob_free_1;
     wire [`rob_sel - 1 : 0] rob_free_2;
+    wire [`indexWidth - 1 : 0] dp_rob_PC1, dp_rob_PC2;
     
     Dispatcher dispatcher(
         .dispatch_enable1(dec1_dp_en),
@@ -401,10 +404,12 @@ module cpu(
         .isbranch1(dp_rob_isbranch1),
         .wr_rd1(dp_rob_wr_rd1),
         .rob_dest1(dp_rob_dest1),
+        .rob_PC1(dp_rob_PC1),
         .rob_enable2(dp_rob_enable2),
         .isbranch2(dp_rob_isbranch2),
         .wr_rd2(dp_rob_wr_rd2),
         .rob_dest2(dp_rob_dest2),
+        .rob_PC2(dp_rob_PC2),
         .ready1_1(rob_dp_ready1_1),
         .data1_1_rob(rob_dp_data1_1),
         .ready2_1(rob_dp_ready2_1),
@@ -757,10 +762,12 @@ module cpu(
         .dpw_isbranch1(dp_rob_isbranch1),
         .dpw_wrrd1(dp_rob_wr_rd1),
         .dpw_addr1(dp_rob_dest1),
+        .dpw_PC1(dp_rob_PC1),
         .dpw_en2(dp_rob_enable2),
         .dpw_isbranch2(dp_rob_isbranch2),
         .dpw_wrrd2(dp_rob_wr_rd2),
         .dpw_addr2(dp_rob_dest2),
+        .dpw_PC2(dp_rob_PC2),
         .dp_tag1_1ready(rob_dp_ready1_1),
         .dp_tag2_1ready(rob_dp_ready2_1),
         .dp_tag1_2ready(rob_dp_ready1_2),
@@ -794,7 +801,8 @@ module cpu(
         .alloc_ptr_2(rob_free_2),
         .com_ptr(rob_top),
         .pdt_en(rob_pdt_en),
-        .pdt_choice(rob_pdt_choice)
+        .pdt_choice(rob_pdt_choice),
+        .pdt_PC(rob_pdt_PC)
     );
 
 endmodule

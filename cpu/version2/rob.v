@@ -16,10 +16,12 @@ module rob(
     input wire dpw_isbranch1,
     input wire dpw_wrrd1,
     input wire [`reg_sel - 1 : 0] dpw_addr1,
+    input wire [`indexWidth - 1 : 0] dpw_PC1,
     input wire dpw_en2,
     input wire dpw_isbranch2,
     input wire dpw_wrrd2,
     input wire [`reg_sel - 1 : 0] dpw_addr2,
+    input wire [`indexWidth - 1 : 0] dpw_PC2,
     //output to decoder 
     output wire dp_tag1_1ready,
     output wire dp_tag2_1ready,
@@ -57,11 +59,13 @@ module rob(
     output reg [`rob_sel - 1 : 0] alloc_ptr_2,
     output reg [`rob_sel - 1 : 0] com_ptr,
     output wire pdt_en,
-    output wire pdt_choice
+    output wire pdt_choice,
+    output wire [`indexWidth - 1 : 0] pdt_PC
 );
     reg [`dataWidth - 1 : 0] data[`rob_size - 1 : 0];
     reg [`rob_size - 1 : 0]  valid, isbranch, wrrd, taken;
-    reg [`reg_sel - 1 : 0]   dest[`rob_size - 1 : 0]; 
+    reg [`reg_sel - 1 : 0]   dest[`rob_size - 1 : 0];
+    reg [`indexWidth - 1 : 0] PC[`rob_size - 1 : 0]; 
     reg [`rob_sel : 0] ent_cnt;
     wire [2 : 0] status;
     
@@ -114,6 +118,7 @@ module rob(
     assign com_tag    = com_ptr;
     assign com_clear  = valid[com_ptr] & isbranch[com_ptr] & taken[com_ptr] != wrrd[com_ptr];
     assign pdt_en     = valid[com_ptr] & isbranch[com_ptr];
+    assign pdt_PC     = PC[com_ptr];
     assign pdt_choice  = taken[com_ptr];
     assign com_target = data[com_ptr];
       
@@ -143,6 +148,7 @@ module rob(
             for (i = 0; i < `rob_size; i = i + 1) begin
                 data[i] <= 0;
                 dest[i] <= `tagFree;
+                PC[i] <= 0;
             end
         end else if (rdy) begin
             if (ex_alu_en_1) begin
@@ -167,11 +173,13 @@ module rob(
                     isbranch[alloc_ptr_1] <= dpw_isbranch1;
                     wrrd[alloc_ptr_1]     <= dpw_wrrd1;
                     dest[alloc_ptr_1]     <= dpw_addr1;
+                    PC[alloc_ptr_1]       <= dpw_PC1;
                 end
                 if (dpw_en2) begin
                     isbranch[alloc_ptr_2] <= dpw_isbranch2;
                     wrrd[alloc_ptr_2]     <= dpw_wrrd2;
-                    dest[alloc_ptr_2]     <= dpw_addr2;            
+                    dest[alloc_ptr_2]     <= dpw_addr2;
+                    PC[alloc_ptr_2]       <= dpw_PC2;            
                 end
                 if (com_en) begin
                     counter = counter + 1;

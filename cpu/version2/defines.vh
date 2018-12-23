@@ -11,6 +11,7 @@
 `define newopWidth         5 
 `define rw_flagWidth       2
 `define maskWidth          4
+`define indexWidth         6
 
 `define rs_alu_size        6
 `define rs_alu_sel         3
@@ -19,7 +20,7 @@
 `define lsbuf_size         8
 `define lsbuf_sel          3
 `define rob_size           16
-`define rob_sel            4   
+`define rob_sel            4  
 `define reg_size           32
 `define reg_sel            5
 `define ram_data_bus_width 8
