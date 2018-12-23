@@ -9,7 +9,7 @@ CLOCK RATE | 100MHz
 Pipelining | 3 stages(Fetch, Decode, Execution)  
 Dynamic Scheduling | Tomasulo Algorithm
 Superscalar | Multiple issues & FUs(2 issues per clock at most)
-Cache | 512B 2-way set associate I-cache
+Cache | 512B 2-way set associative I-cache
 Memory | 128K BRAM on chip
 
 Feature | RISC-V CPU(version2, slower than version1)
@@ -20,7 +20,7 @@ Pipelining | 5 stages(Fetch, Decode, Dispatch, Execution, Commit)
 Dynamic Scheduling | Tomasulo Algorithm
 Superscalar | Multiple issues & FUs(2 issues per clock at most)
 Dynamic Speculation | 64-entry gshared Predictor
-Cache | 512B 2-way set associate I-cache
+Cache | 512B 2-way set associative I-cache
 Memory | 128K BRAM on chip
 
 Both versions pass all tests on FPGA(xc7a35tcpg236-1)
